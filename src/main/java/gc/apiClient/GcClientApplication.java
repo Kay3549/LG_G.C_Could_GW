@@ -13,7 +13,7 @@ public class GcClientApplication {
 	public static void main(String[] args) {
 		
 		
-		SpringApplication.run(GcClientApplication.class, args);  
+		SpringApplication.run(GcClientApplication.class, args);   
 	}
 
 }
