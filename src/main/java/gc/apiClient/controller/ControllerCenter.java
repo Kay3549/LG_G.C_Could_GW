@@ -483,6 +483,10 @@ public class ControllerCenter extends ServiceJson {
 
 	public Mono<Void> Roop(String contactLtId, List<String> values, String divisionName) throws Exception {
 
+		
+		log.info(" ");
+		log.info("====== Class : ControllerCenter - Method : Roop ======");
+		log.info("number of keys : {}",values.size());
 		ObjectMapper objectMapper = null;
 		String result = serviceWeb.PostContactLtApiBulk("contactList", contactLtId, values);
 
@@ -552,15 +556,25 @@ public class ControllerCenter extends ServiceJson {
 					log.error("DataAccessException 발생 : {}", ex.getMessage());
 				}
 			}
+			
 			values.clear();
 			return Mono.empty();
 
 		default:
-
+			
+			try {
+				log.info("====== Came in Apim logic  ======");
+				log.info("number of keys : {}",values.size());
+				log.info("result : {}",result);
+			
 			for (int i = 0; i < values.size(); i++) {
+				
+				String contactsresult1 = ExtractContacts56(result, i);
+				
+				Entity_CampRt entityCmRt2 = serviceDb.createCampRtMsg(contactsresult1);
 
-				int dirt = entityCmRt.getDirt();// 응답코드
-				String tokendata = entityCmRt.getTkda();// 토큰데이터
+				int dirt = entityCmRt2.getDirt();// 응답코드
+				String tokendata = entityCmRt2.getTkda();// 토큰데이터
 
 				Entity_ToApim enToApim = new Entity_ToApim();
 				enToApim.setDirt(dirt);
@@ -571,7 +585,6 @@ public class ControllerCenter extends ServiceJson {
 
 			objectMapper = new ObjectMapper();
 
-			try {
 				String jsonString = objectMapper.writeValueAsString(apimEntitylt);
 
 				// localhost:8084/dspRslt
@@ -580,11 +593,13 @@ public class ControllerCenter extends ServiceJson {
 				String endpoint = "/dspRslt";
 				apim.sendMsgToApim(endpoint, jsonString);
 				log.info("CAMPRT 로직, APIM으로 보냄. : {} ", jsonString);
+				apimEntitylt.clear();
+				values.clear();
 
 			} catch (Exception e) {
 				e.printStackTrace();
+				log.error("Error Message : {}", e.getMessage());
 			}
-			values.clear();
 			return Mono.empty();
 		}
 
