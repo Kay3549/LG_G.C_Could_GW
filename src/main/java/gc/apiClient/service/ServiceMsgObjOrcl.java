@@ -32,9 +32,6 @@ public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 	@Override
 	public <T> String DataCallMsg(T t, String crudtype) {
 
-		log.info(" ");
-		log.info("====== ClassName : ServiceMsgObjOrcl & Method : DataCallMsg ======");
-
 		JSONObject obj = new JSONObject();
 		try {
 
@@ -45,7 +42,6 @@ public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 			obj.put("topcDataIsueDtm", topcDataIsueDtm);
 			obj.put("dataChgCd", crudtype != null ? crudtype : "");
 
-			// Check the type of t and cast it accordingly
 			if (t instanceof Entity_DataCall) {
 				Entity_DataCall en = (Entity_DataCall) t;
 				obj.put("entTime", en.getNew_entered_time() != null ? en.getNew_entered_time() : "");
@@ -53,8 +49,6 @@ public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 				obj.put("callSeq", en.getNew_call_seq() != null ? en.getNew_call_seq() : 0);
 				obj.put("icId", en.getNew_icid() != null ? en.getNew_icid() : "");
 				obj.put("siteCd", en.getNew_site_code() != null ? en.getNew_site_code() : 0);
-
-				log.info("Home obj toString : {}", obj.toString());
 
 			} else if (t instanceof Entity_MDataCall) {
 				Entity_MDataCall en = (Entity_MDataCall) t;
@@ -64,10 +58,8 @@ public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 				obj.put("icId", en.getNew_icid() != null ? en.getNew_icid() : "");
 				obj.put("siteCd", en.getNew_site_code() != null ? en.getNew_site_code() : 0);
 
-				log.info("Mobile obj toString : {}", obj.toString());
 			}
 
-			log.info("====== End DataCallMsg ======");
 
 		} catch (Exception e) {
 

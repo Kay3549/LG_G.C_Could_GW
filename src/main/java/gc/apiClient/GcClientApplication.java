@@ -12,7 +12,7 @@ public class GcClientApplication {
 
 	public static void main(String[] args) {
 		
-		
+		//최초 어플리케이션 실행 부분.
 		SpringApplication.run(GcClientApplication.class, args);   
 	}
 

@@ -563,9 +563,6 @@ public class ControllerCenter extends ServiceJson {
 		default:
 			
 			try {
-				log.info("====== Came in Apim logic  ======");
-				log.info("number of keys : {}",values.size());
-				log.info("result : {}",result);
 			
 			for (int i = 0; i < values.size(); i++) {
 				
@@ -604,6 +601,28 @@ public class ControllerCenter extends ServiceJson {
 		}
 
 	}
+	
+	
+	@GetMapping("/putput/{topic}")
+	public void k (@PathVariable("topic") int tranId) {
+		
+		int till = tranId;
+		Entity_CampMa enCampMa = new Entity_CampMa();
+		try {
+			
+			for(int i =0; i< till; i++) {
+				enCampMa.setCpid(Integer.toString(i));				
+				enCampMa.setCoid(i);				
+				enCampMa.setCpna("ggplay");				
+				serviceDb.InsertCampMa(enCampMa);
+			}
+			
+		}catch(Exception e) {
+			
+		}
+	}
+	
+	
 	
 
 	@GetMapping("/gethc")
