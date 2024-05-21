@@ -528,6 +528,7 @@ public class Controller360view extends ServiceJson {
 
 					String crudtype = entitylist.get(i).getCmd();
 					int orderid = entitylist.get(i).getOrderid();
+					log.info("홈 wcseq 넘어오는 값 : {}", entitylist.get(i).getNew_wcseq());
 					MessageTo360View.SendMsgTo360View(topic_id,
 							serviceMsgObjOrcl.WaDataCallTraceMsg(entitylist.get(i), crudtype));
 					serviceOracle.deleteAll(Entity_WaDataCallTrace.class, orderid);
@@ -561,6 +562,7 @@ public class Controller360view extends ServiceJson {
 
 					String crudtype = entitylist.get(i).getCmd();
 					int orderid = entitylist.get(i).getOrderid();
+					log.info("모바일 wcseq넘어오는 값 : {}", entitylist.get(i).getNew_wcseq());
 					MessageTo360View.SendMsgTo360View(topic_id,
 							serviceMsgObjOrcl.WaDataCallTraceMsg(entitylist.get(i), crudtype));
 					serviceOracle.deleteAll(Entity_MWaDataCallTrace.class, orderid);

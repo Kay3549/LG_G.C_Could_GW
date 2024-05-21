@@ -267,12 +267,12 @@ public class ControllerCenter extends ServiceJson {
 					log.info("New value of Campaign name : {}", cpna);
 
 					serviceDb.UpdateCampMa(cpid, cpna);
-					return Mono.just(ResponseEntity.ok().body(String.format("UCRM, A record with cpid : '%s' has been updated successfully", cpid)));
+					return Mono.just(ResponseEntity.ok().body(String.format("UCRM, A record with cpid : %s has been updated successfully", cpid)));
 					
 				} else {
 					log.info("Cpid of target record for deleting : {}", cpid);
 					serviceDb.DelCampMaById(cpid);
-					return Mono.just(ResponseEntity.ok().body(String.format("UCRM, A record with cpid : '%s' has been deleted successfully", cpid)));
+					return Mono.just(ResponseEntity.ok().body(String.format("UCRM, A record with cpid : %s has been deleted successfully", cpid)));
 				}
 				
 			case "Callbot":
@@ -301,12 +301,12 @@ public class ControllerCenter extends ServiceJson {
 					log.info("New value of Campaign name : {}", cpna);
 
 					serviceDb.UpdateCampMa(cpid, cpna);
-					return Mono.just(ResponseEntity.ok().body(String.format("Callbot, A record with cpid : '%s' has been updated successfully", cpid)));
+					return Mono.just(ResponseEntity.ok().body(String.format("Callbot, A record with cpid : %s has been updated successfully", cpid)));
 
 				} else {
 					log.info("Cpid of target record for deleting : {}", cpid);
 					serviceDb.DelCampMaById(cpid);
-					return Mono.just(ResponseEntity.ok().body(String.format("Callbot, A record with cpid : '%s' has been deleted successfully", cpid)));
+					return Mono.just(ResponseEntity.ok().body(String.format("Callbot, A record with cpid : %s has been deleted successfully", cpid)));
 				}
 
 			default:
@@ -328,12 +328,12 @@ public class ControllerCenter extends ServiceJson {
 					log.info("New value of Campaign name : {}", cpna);
 
 					serviceDb.UpdateCampMa(cpid, cpna);
-					return Mono.just(ResponseEntity.ok().body(String.format("Apim, A record with cpid : '%s' has been updated successfully", cpid)));
+					return Mono.just(ResponseEntity.ok().body(String.format("Apim, A record with cpid : %s has been updated successfully", cpid)));
 				} else {
 					log.info("Cpid of target record for deleting : {}", cpid);
 					serviceDb.DelCampMaById(cpid);
 				}
-				return Mono.just(ResponseEntity.ok().body(String.format("Apim, A record with cpid : '%s' has been deleted successfully", cpid)));
+				return Mono.just(ResponseEntity.ok().body(String.format("Apim, A record with cpid : %s has been deleted successfully", cpid)));
 			}
 		} catch (EntityNotFoundException ex) {
 			log.error("EntityNotFoundException occurred: {} ", ex.getMessage());
@@ -343,7 +343,7 @@ public class ControllerCenter extends ServiceJson {
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Error Messge : {}", e.getMessage());
-			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : {}", e.getMessage())));
+			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : %s", e.getMessage())));
 		}
 	}
 
@@ -389,7 +389,7 @@ public class ControllerCenter extends ServiceJson {
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.info("====== End SaveRtData ======");
-			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : {}", e.getMessage())));
+			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : %s", e.getMessage())));
 		}
 
 	}
@@ -409,7 +409,7 @@ public class ControllerCenter extends ServiceJson {
 			} else {
 				log.info("All records from DB : {}", entitylist.toString());
 				int reps = entitylist.getNumberOfElements();
-				log.info("number of records : {}", reps);
+				log.info("number of records from 'CAMPRT_UCUBE_W' table: {}", reps);
 				log.info("{}만큼 반복,", reps);
 
 				Map<String, String> mapcontactltId = new HashMap<String, String>();

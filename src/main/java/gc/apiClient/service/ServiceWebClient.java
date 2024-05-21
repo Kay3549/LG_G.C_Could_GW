@@ -110,7 +110,6 @@ public class ServiceWebClient implements InterfaceWebClient {
 		}
 
 		log.info("PostContactLtApiRequet 요청 후 결과 값 : {}, 시도횟수 : {}", result, retryCount);
-		log.info("Bytes size of PostContactLtApiRequet message: {}", byteSize);
 		log.info("====== End PostContactLtApiRequet ======");
 		return result;
 	}

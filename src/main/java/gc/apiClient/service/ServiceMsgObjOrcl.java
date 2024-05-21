@@ -317,12 +317,12 @@ public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 		// Check the type of t and cast it accordingly
 		if (t instanceof Entity_WaDataCallTrace) {
 			Entity_WaDataCallTrace en = (Entity_WaDataCallTrace) t;
-			obj.put("wcSeq", en.getNew_wcseq() != null ? en.getNew_tc_seq() : 0);
+			obj.put("wcSeq", en.getNew_wcseq() != null ? en.getNew_wcseq() : 0);
 			obj.put("tcSeq", en.getNew_tc_seq() != null ? en.getNew_tc_seq() : 0);
 			obj.put("trCd", en.getNew_tracecode() != null ? en.getNew_tracecode() : "");
 		} else if (t instanceof Entity_MWaDataCallTrace) {
 			Entity_MWaDataCallTrace en = (Entity_MWaDataCallTrace) t;
-			obj.put("wcSeq", en.getNew_wcseq() != null ? en.getNew_tc_seq() : 0);
+			obj.put("wcSeq", en.getNew_wcseq() != null ? en.getNew_wcseq() : 0);
 			obj.put("tcSeq", en.getNew_tc_seq() != null ? en.getNew_tc_seq() : 0);
 			obj.put("trCd", en.getNew_tracecode() != null ? en.getNew_tracecode() : "");
 		}

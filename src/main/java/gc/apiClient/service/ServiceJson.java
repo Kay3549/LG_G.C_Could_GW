@@ -118,9 +118,9 @@ public class ServiceJson implements InterfaceJson {
 
 		try {
 			jsonNode = objectMapper.readTree(jsonResponse);
-			result = jsonNode.path("campaign_id").asText();
+			result = jsonNode.path("cpid").asText();
 			String coid = jsonNode.path("callerName").asText();
-			String cpnm = jsonNode.path("campaign_name").asText();
+			String cpnm = jsonNode.path("cpnm").asText();
 			result = result + "::" + coid;
 			result = result + "::" + cpnm;
 			result = result + "::" + jsonNode.path("division").asText();
@@ -246,7 +246,7 @@ public class ServiceJson implements InterfaceJson {
 		try {
 
 			jsonNode = objectMapper.readTree(jsonResponse);
-			result = jsonNode.path("campaign_id").asText();
+			result = jsonNode.path("cpid").asText();
 			result += "::" + jsonNode.path("contactList_id").asText();
 			result += "::" + jsonNode.path("division").asText();
 

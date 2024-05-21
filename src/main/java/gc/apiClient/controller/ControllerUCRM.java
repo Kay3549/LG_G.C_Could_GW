@@ -90,7 +90,7 @@ public class ControllerUCRM extends ServiceJson {
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Error Message : {}", e.getMessage());
-			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : {}", e.getMessage())));
+			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : %s", e.getMessage())));
 		}
 
 		log.info("====== End SaveUcrmData ======");
@@ -109,9 +109,8 @@ public class ControllerUCRM extends ServiceJson {
 			if (entitylist.isEmpty()) {
 				log.info("All records from DB : Nothing");
 			} else {
-				log.info("All records from DB : {}", entitylist.toString());
 				int reps = entitylist.getNumberOfElements();
-				log.info("number of records : {}", reps);
+				log.info("number of records from 'UCRMLT' table : {}", reps);
 				log.info("{}만큼 반복,", reps);
 
 				Map<String, String> mapcontactltId = new HashMap<String, String>();
@@ -217,8 +216,8 @@ public class ControllerUCRM extends ServiceJson {
 			} else {
 				log.info("All records from DB : {}", entitylist.toString());
 				int reps = entitylist.getNumberOfElements();
-				log.info("number of records : {}", reps);
-				log.info("{}만큼 반복,", reps);
+				log.info("number of records from 'CAMPRT_UCRM_W' table: {}", reps);
+				log.info("{}만큼 반복", reps);
 
 				Map<String, String> mapcontactltId = new HashMap<String, String>();
 				Map<String, String> mapdivision = new HashMap<String, String>();
