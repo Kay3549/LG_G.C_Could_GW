@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 
 	@Override
-	public <T> String DataCallMsg(T t, String crudtype) {
+	public <T> String DataCallMsg(T t, String crudtype) {//(T) 매개변수를 제네릭 타임으로 받는다. 
 
 		JSONObject obj = new JSONObject();
 		try {
@@ -42,6 +42,7 @@ public class ServiceMsgObjOrcl implements InterfaceMsgObjOrcl {
 			obj.put("topcDataIsueDtm", topcDataIsueDtm);
 			obj.put("dataChgCd", crudtype != null ? crudtype : "");
 
+			//받아온 객체의 타임이 홈타입인지, 모바일 타입인지 구별 홈은 Entity_DataCall, 모바일은 Entity_MDataCall 'M'이 있고 없고 차이. 
 			if (t instanceof Entity_DataCall) {
 				Entity_DataCall en = (Entity_DataCall) t;
 				obj.put("entTime", en.getNew_entered_time() != null ? en.getNew_entered_time() : "");

@@ -21,7 +21,8 @@ public class ServiceWebClient implements InterfaceWebClient {
 		String result = "";
 
 		WebClientApp webClient = new WebClientApp();
-		result = webClient.makeApiRequest(endpoint, "GET","sortBy","dateCreated","sortOrder","descending");
+		result = webClient.makeApiRequest(endpoint, "GET","sortBy","dateCreated","sortOrder","descending");//어떤 endpoint를 전달함으로써 어떤 api를 사용할지. http method는 어떤 형식일지. 
+																										   //그 뒤는 path 파라미터 두 쌍, (키,값)	여기서의 조건은, '캠페인 생성 날짜 기준으로 / 내림차순으로' 즉, 캠페인 생성일기준 최신순으로 결과값을 리턴 받기를 원함.  
 
 		log.info("====== End GetApiRequet ======");
 		return result;
@@ -87,8 +88,6 @@ public class ServiceWebClient implements InterfaceWebClient {
 		String result = "";
 		WebClientApp webClient = new WebClientApp();
 		result = webClient.makeApiRequest34(endpoint,contactListId, msg.toString());
-
-		int byteSize = msg.toString().getBytes().length;
 
 		int cnt = 3;
 		int retryCount = 1;
