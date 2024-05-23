@@ -9,19 +9,19 @@
       "name": "spring.datasource.orclh",
       "type": "javax.sql.DataSource",
       "sourceType": "gc.apiClient.configDB.OracleDataSourceHconfig",
-      "sourceMethod": "oracleHDataSource()"
+      "sourceMethod": "public javax.sql.DataSource oracleHDataSource() "
     },
     {
       "name": "spring.datasource.orclm",
       "type": "javax.sql.DataSource",
       "sourceType": "gc.apiClient.configDB.OracleDataSourceMConfig",
-      "sourceMethod": "oracleMDataSource()"
+      "sourceMethod": "public javax.sql.DataSource oracleMDataSource() "
     },
     {
       "name": "spring.datasource.postgresql",
       "type": "javax.sql.DataSource",
       "sourceType": "gc.apiClient.configDB.PostgresqlDataSourceConfig",
-      "sourceMethod": "postgresqlDataSource()"
+      "sourceMethod": "public javax.sql.DataSource postgresqlDataSource() "
     }
   ],
   "properties": [

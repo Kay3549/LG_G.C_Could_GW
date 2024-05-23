@@ -101,7 +101,21 @@ public class BusinessLogic {
 			businesslogic.put("business", business);
 			businesslogic.put("topic_id", topic_id);
 			
-		} else if( (tkda=='A')&&(divisionName.equals("CallbotHome")) ){
+		} else if( (tkda=='C')&&(divisionName.equals("CallbotHome")) ){
+			
+			business = "UCRM";
+			topic_id = "from_clcc_mblucrmcmpnrs_message"; 
+			businesslogic.put("business", business);
+			businesslogic.put("topic_id", topic_id);
+			
+		} else if( (tkda=='C')&&(divisionName.equals("CallbotMobile")) ){
+			
+			business = "UCRM";
+			topic_id = "from_clcc_mblucrmcmpnrs_message"; 
+			businesslogic.put("business", business);
+			businesslogic.put("topic_id", topic_id);
+			
+		} else if( (tkda=='A')&&(divisionName.equals("CallbotHome")) ){ 
 			
 			business = "CALLBOT";
 			topic_id = "from_clcc_hmaiccmpnrs_message";
