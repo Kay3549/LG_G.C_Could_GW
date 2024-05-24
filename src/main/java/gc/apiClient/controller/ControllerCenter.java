@@ -1,5 +1,7 @@
 package gc.apiClient.controller;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -686,5 +688,20 @@ public class ControllerCenter extends ServiceJson {
 	public Mono<ResponseEntity<String>> getHealthCheckKafka() throws Exception {
 		return Mono.just(ResponseEntity.ok("TEST RESPONSE"));
 	}
+	
+	/**
+	 * [EKS] POD LivenessProbe 헬스체크
+	 */
+	private final Instant started = Instant.now(); 
+	
+    @GetMapping("/healthz")
+    public ResponseEntity<String> healthCheck() {
+        Duration duration = Duration.between(started, Instant.now());
+        if (duration.getSeconds() > 10) {
+            return ResponseEntity.status(500).body("error: " + duration.getSeconds());
+        } else {
+            return ResponseEntity.ok("ok");
+        }
+    }
 
 }

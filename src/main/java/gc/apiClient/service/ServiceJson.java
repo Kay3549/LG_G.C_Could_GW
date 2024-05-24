@@ -36,10 +36,8 @@ public class ServiceJson implements InterfaceJson {
 
 		} catch (JsonMappingException e) {
 
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

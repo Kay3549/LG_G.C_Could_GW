@@ -4,6 +4,7 @@ import gc.apiClient.entity.postgresql.Entity_Ucrm;
 
 public interface InterfaceJson  {//defult로 해놓으면 InterfaceJson을 다른 class에서 implements 했을 때 모두 구현할 필요 없음.
 								//원하는 함수가 구현할 수 있음.
+
 	
 	  String ExtractVal(String stringMsg) throws Exception;
 	  String ExtractValCrm12(String stringMsg, int size) throws Exception;
