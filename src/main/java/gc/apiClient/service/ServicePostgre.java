@@ -3,7 +3,6 @@ package gc.apiClient.service;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -102,92 +101,96 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		String contactId = parts[0];
 		String tkda = parts[5];
 		Date didt = null;
-
-		log.info("------ 들어온 rs를 분배해여 필요한 변수들 초기화 ------");
-		log.info("rlsq: {}", rlsq);
-		log.info("coid: {}", coid);
-		log.info("cpsq: {}", cpsq);
-		log.info("hubid: {}", hubId);
-		log.info("dirt: {}", dirt);
-		log.info("dict: {}", dict);
-		log.info("campid: {}", campid);
-		log.info("contactLtId: {}", contactLtId);
-		log.info("contactId: {}", contactId);
-		log.info("tkda: {}", tkda);
-		log.info("didt: {}", parts[6]);
-		log.info("------ 들어온 rs를 분배해여 필요한 변수들 초기화 끝 ------");
-
-		if (tkda.charAt(0) == 'C') {
-			hubId = Long.parseLong(tkda.split(",")[1]);
-		} else if (tkda.charAt(0) == 'A') {
-			cpsq = Integer.parseInt(tkda.split("\\|\\|")[5]);
-		} else {
-		}
-
-		SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+		
 		try {
-			log.info("didt(포맷 변경 전) : {}", parts[6]);
-			Date parsedDate = inputFormat.parse(parts[6]);
 
-			// Formatting the parsed date to the desired format
-			SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-			outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-			String formattedDateString = outputFormat.format(parsedDate);
-			Date formattedDate = outputFormat.parse(formattedDateString);
-			didt = formattedDate;
-			log.info("didt(포맷 변경 후) : {}", didt);
-		} catch (ParseException e) {
+			log.info("------ 들어온 rs를 분배해여 필요한 변수들 초기화 ------");
+			log.info("rlsq: {}", rlsq);
+			log.info("coid: {}", coid);
+			log.info("cpsq: {}", cpsq);
+			log.info("hubid: {}", hubId);
+			log.info("dirt: {}", dirt);
+			log.info("dict: {}", dict);
+			log.info("campid: {}", campid);
+			log.info("contactLtId: {}", contactLtId);
+			log.info("contactId: {}", contactId);
+			log.info("tkda: {}", tkda);
+			log.info("didt: {}", parts[6]);
+			log.info("------ 들어온 rs를 분배해여 필요한 변수들 초기화 끝 ------");
+
+			if (tkda.charAt(0) == 'C') {
+				hubId = Long.parseLong(tkda.split(",")[1]);
+			} else if (tkda.charAt(0) == 'A') {
+				cpsq = Integer.parseInt(tkda.split("\\|\\|")[5]);
+			} else {
+			}
+
+			SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+				log.info("didt(포맷 변경 전) : {}", parts[6]);
+				Date parsedDate = inputFormat.parse(parts[6]);
+
+				// Formatting the parsed date to the desired format
+				SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+				outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+				String formattedDateString = outputFormat.format(parsedDate);
+				Date formattedDate = outputFormat.parse(formattedDateString);
+				didt = formattedDate;
+				log.info("didt(포맷 변경 후) : {}", didt);
+
+			log.info("dirt(맵핑 전) : {}", parts[4]);
+			Map<String, String> properties = customProperties.getProperties();
+			dirt = Integer.parseInt(properties.getOrDefault(parts[4], "1"));
+			log.info("dirt(맵핑 후) : {}", dirt);
+
+			ServiceWebClient crmapi1 = new ServiceWebClient();
+			String result = crmapi1.GetStatusApiRequet("campaign_stats", campid);
+			dict = ServiceJson.extractIntVal("ExtractDict", result);
+
+			Entity_CampMa enCampMa = new Entity_CampMa();
+
+			enCampMa = findCampMaByCpid(campid);
+			coid = enCampMa.getCoid();
+			log.info("campid({})로 조회한 레코드의 coid : {}", campid, coid);
+
+			rlsq = findCampRtMaxRlsq().intValue();
+			log.info("camprt테이블에서 현재 가장 큰 rlsq 값 : {}", rlsq);
+			rlsq++;
+			log.info("가져온 rlsq의 값에 +1 : {}", rlsq);
+
+			id.setRlsq(rlsq);
+			id.setCoid(coid);
+			enCampRt.setId(id);
+			enCampRt.setContactLtId(contactLtId);
+			enCampRt.setContactid(contactId);
+			enCampRt.setCpid(campid);
+			enCampRt.setTkda(tkda);
+			enCampRt.setCamp_seq(cpsq);
+			enCampRt.setHubid(hubId);
+			enCampRt.setDidt(didt);
+			enCampRt.setDirt(dirt);
+			enCampRt.setDict(dict);
+
+			log.info("------ return 하기 전 변수들의 최종 값 확인 ------");
+			log.info("rlsq: {}", rlsq);
+			log.info("coid: {}", coid);
+			log.info("campid: {}", campid);
+			log.info("cpsq: {}", cpsq);
+			log.info("contactLtId: {}", contactLtId);
+			log.info("contactId: {}", contactId);
+			log.info("tkda: {}", tkda);
+			log.info("hubid: {}", hubId);
+			log.info("didt: {}", didt);
+			log.info("dirt: {}", dirt);
+			log.info("dict: {}", dict);
+			log.info("------ return 하기 전 변수들의 최종 값 확인 ------");
+
+			log.info("===== End createCampRtMsg =====");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error("Error Message : {}", e.getMessage());
 		}
-
-		log.info("dirt(맵핑 전) : {}", parts[4]);
-		Map<String, String> properties = customProperties.getProperties();
-		dirt = Integer.parseInt(properties.getOrDefault(parts[4], "1"));
-		log.info("dirt(맵핑 후) : {}", dirt);
-
-		ServiceWebClient crmapi1 = new ServiceWebClient();
-		String result = crmapi1.GetStatusApiRequet("campaign_stats", campid);
-		ServiceJson sv = new ServiceJson();
-		dict = sv.ExtractDict(result);
-
-		Entity_CampMa enCampMa = new Entity_CampMa();
-
-		enCampMa = findCampMaByCpid(campid);
-		coid = enCampMa.getCoid();
-		log.info("campid({})로 조회한 레코드의 coid : {}", campid, coid);
-
-		rlsq = findCampRtMaxRlsq().intValue();
-		log.info("camprt테이블에서 현재 가장 큰 rlsq 값 : {}", rlsq);
-		rlsq++;
-		log.info("가져온 rlsq의 값에 +1 : {}", rlsq);
-
-		id.setRlsq(rlsq);
-		id.setCoid(coid);
-		enCampRt.setId(id);
-		enCampRt.setContactLtId(contactLtId);
-		enCampRt.setContactid(contactId);
-		enCampRt.setCpid(campid);
-		enCampRt.setTkda(tkda);
-		enCampRt.setCamp_seq(cpsq);
-		enCampRt.setHubid(hubId);
-		enCampRt.setDidt(didt);
-		enCampRt.setDirt(dirt);
-		enCampRt.setDict(dict);
-
-		log.info("------ return 하기 전 변수들의 최종 값 확인 ------");
-		log.info("rlsq: {}", rlsq);
-		log.info("coid: {}", coid);
-		log.info("campid: {}", campid);
-		log.info("cpsq: {}", cpsq);
-		log.info("contactLtId: {}", contactLtId);
-		log.info("contactId: {}", contactId);
-		log.info("tkda: {}", tkda);
-		log.info("hubid: {}", hubId);
-		log.info("didt: {}", didt);
-		log.info("dirt: {}", dirt);
-		log.info("dict: {}", dict);
-		log.info("------ return 하기 전 변수들의 최종 값 확인 ------");
-
-		log.info("===== End createCampRtMsg =====");
+		
 
 		return enCampRt;
 	}
@@ -195,72 +198,78 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	@Override
 	public JSONObject createCampRtJson(Entity_CampRt enCampRt, String business) {// contactid(고객키)::contactListId::didt::dirt::cpid
 
-		Date now = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
-		String topcDataIsueDtm = formatter.format(now);
-
-		long hubId = enCampRt.getHubid();
-		int dirt = enCampRt.getDirt();
-		int dict = enCampRt.getDict();
-		int cpSeq = enCampRt.getCamp_seq();
-		String coid = "";
-		String campid = enCampRt.getCpid();
-		String didt = "";
-
-		SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-		String formattedDateString = outputFormat.format(enCampRt.getDidt());
-		didt = formattedDateString;
-
-		dirt = enCampRt.getDirt();
-
-		ServiceWebClient crmapi1 = new ServiceWebClient();
-		String result = crmapi1.GetStatusApiRequet("campaign_stats", campid);
-		ServiceJson sv = new ServiceJson();
-		dict = sv.ExtractDict(result);
-
-		Entity_CampMa enCampMa = new Entity_CampMa();
-
-		enCampMa = findCampMaByCpid(campid);
-		coid = Integer.toString(enCampMa.getCoid());
-		MappingCenter mappingData = new MappingCenter();
-		coid = mappingData.getCentercodeById(coid);
-		coid = coid != null ? coid : "EX";
-
 		JSONObject obj = new JSONObject();
+		try {
+			Date now = new Date();
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
+			String topcDataIsueDtm = formatter.format(now);
 
-		if (business.equals("CALLBOT")) {
+			long hubId = enCampRt.getHubid();
+			int dirt = enCampRt.getDirt();
+			int dict = enCampRt.getDict();
+			int cpSeq = enCampRt.getCamp_seq();
+			String coid = "";
+			String campid = enCampRt.getCpid();
+			String didt = "";
 
-			outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+			SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-			formattedDateString = outputFormat.format(enCampRt.getDidt());
+			String formattedDateString = outputFormat.format(enCampRt.getDidt());
 			didt = formattedDateString;
 
-			obj.put("topcDataIsueDtm", topcDataIsueDtm);
-			obj.put("cpId", campid);
-			obj.put("cpSeq", cpSeq);
-			obj.put("lastAttempt", didt);
-			obj.put("attmpNo", dict);
-			obj.put("lastResult", dirt);
+			dirt = enCampRt.getDirt();
 
-		} else {// UCRM
+			ServiceWebClient crmapi1 = new ServiceWebClient();
+			String result = crmapi1.GetStatusApiRequet("campaign_stats", campid);
+			dict = ServiceJson.extractIntVal("ExtractDict", result);
+
+			Entity_CampMa enCampMa = new Entity_CampMa();
+
+			enCampMa = findCampMaByCpid(campid);
+			coid = Integer.toString(enCampMa.getCoid());
+			MappingCenter mappingData = new MappingCenter();
+			coid = mappingData.getCentercodeById(coid);
+			coid = coid != null ? coid : "EX";
+
+
+			if (business.equals("CALLBOT")) {
+
+				outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+				outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+				formattedDateString = outputFormat.format(enCampRt.getDidt());
+				didt = formattedDateString;
+
+				obj.put("topcDataIsueDtm", topcDataIsueDtm);
+				obj.put("cpId", campid);
+				obj.put("cpSeq", cpSeq);
+				obj.put("lastAttempt", didt);
+				obj.put("attmpNo", dict);
+				obj.put("lastResult", dirt);
+
+			} else {// UCRM
+				
+				String dateString = didt;
+				DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+				LocalDateTime dateTime = LocalDateTime.parse(dateString, format);
+				LocalDateTime adjustedDateTime = dateTime.plusHours(9);
+				
+				ZonedDateTime desiredTime = adjustedDateTime.atZone(ZoneId.of("UTC+09:00"));
+				String formattedTime = desiredTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+				obj.put("topcDataIsueDtm", topcDataIsueDtm);
+				obj.put("ibmHubId", hubId);
+				obj.put("centerCd", coid);
+				obj.put("lastAttempt", formattedTime);
+				obj.put("totAttempt", dict);
+				obj.put("lastResult", dirt);
+
+			}	
 			
-			String dateString = didt;
-			DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-			LocalDateTime dateTime = LocalDateTime.parse(dateString, format);
-			LocalDateTime adjustedDateTime = dateTime.plusHours(9);
-			
-			ZonedDateTime desiredTime = adjustedDateTime.atZone(ZoneId.of("UTC+09:00"));
-			String formattedTime = desiredTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-			obj.put("topcDataIsueDtm", topcDataIsueDtm);
-			obj.put("ibmHubId", hubId);
-			obj.put("centerCd", coid);
-			obj.put("lastAttempt", formattedTime);
-			obj.put("totAttempt", dict);
-			obj.put("lastResult", dirt);
-
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error("Error Message : {}", e.getMessage());
 		}
+		
 		return obj;
 	}
 
@@ -291,6 +300,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		log.info("====== End CreateEnCampMa ======");
 		return enCampMa;
 	}
+	
 
 	@Override
 	public Entity_CampMaJsonUcrm JsonCampMaUcrm(Entity_CampMa enCampMa, String datachgcd) throws Exception {
@@ -344,6 +354,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		return enCampMaJson;
 	}
 
+	
 	@Override
 	public Entity_CampMaJson JsonCampMaCallbot(Entity_CampMa enCampMa, String datachgcd) { // cpid::cpna::division::coid
 

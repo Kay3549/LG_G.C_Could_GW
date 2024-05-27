@@ -31,14 +31,13 @@ import gc.apiClient.interfaceCollection.InterfaceDBPostgreSQL;
 import gc.apiClient.interfaceCollection.InterfaceMsgObjOrcl;
 import gc.apiClient.interfaceCollection.InterfaceWebClient;
 import gc.apiClient.messages.MessageTo360View;
-import gc.apiClient.service.ServiceJson;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @RestController
 @Slf4j
 @Profile("oracleH")
-public class Controller360view extends ServiceJson {
+public class Controller360view {
 
 	private final InterfaceDBOracle serviceOracle;
 	private final InterfaceMsgObjOrcl serviceMsgObjOrcl;

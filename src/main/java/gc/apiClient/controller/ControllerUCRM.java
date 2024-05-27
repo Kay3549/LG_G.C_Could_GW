@@ -42,7 +42,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @Slf4j
-public class ControllerUCRM extends ServiceJson {
+public class ControllerUCRM  {
 
 	private final InterfaceDBPostgreSQL serviceDb;
 	private final InterfaceWebClient serviceWeb;
@@ -130,7 +130,7 @@ public class ControllerUCRM extends ServiceJson {
 
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ExtractContactLtId(result); // 가져온 결과에서 contactlistid,queueid만 추출.
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서 contactlistid,queueid만 추출.
 						contactLtId = res.split("::")[0];
 						queid = res.split("::")[1];
 
@@ -139,7 +139,7 @@ public class ControllerUCRM extends ServiceJson {
 					} else {
 					}
 
-					String row_result = ExtractRawUcrm(entitylist.getContent().get(i));
+					String row_result = ServiceJson.extractStrVal("ExtractRawUcrm", entitylist.getContent().get(i));
 					row_result = row_result + "::" + contactLtId + "::" + queid;
 					String contactltMapper = serviceDb.createContactLtGC(row_result);
 
@@ -239,7 +239,7 @@ public class ControllerUCRM extends ServiceJson {
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						log.info("Nomatch contactId");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ExtractContactLtId(result); // 가져온 결과에서 contactlistid,queueid만 추출.
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서 contactlistid,queueid만 추출.
 						contactLtId = res.split("::")[0];
 
 						String division = enUcrmRt.getDivisionid();  // 첫번째 레코드부터 cpid를 가지고 온다.
@@ -302,7 +302,8 @@ public class ControllerUCRM extends ServiceJson {
 
 		// 캠페인이 어느 비즈니스 로직인지 판단하기 위해서 일단 목록 중 하나만 꺼내서 확인해 보도록한다.
 		// 왜냐면 나머지는 똑같을테니.
-		String contactsresult = ExtractContacts56(result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로
+		
+		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로
 																// 넣는다.
 		Entity_CampRt entityCmRt = serviceDb.createCampRtMsg(contactsresult);// contactsresult값으로
 																				// entity하나를 만든다.
@@ -319,7 +320,7 @@ public class ControllerUCRM extends ServiceJson {
 
 			for (int i = 0; i < values.size(); i++) {
 
-				contactsresult = ExtractContacts56(result, i);
+				contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, i);
 				if (contactsresult.equals("")) {
 					log.info("No value, skip to next");
 					continue;
@@ -371,7 +372,7 @@ public class ControllerUCRM extends ServiceJson {
 
 				for (int i = 0; i < values.size(); i++) {
 
-					String contactsresult1 = ExtractContacts56(result, i);
+					String contactsresult1 = ServiceJson.extractStrVal("ExtractContacts56",result, i);
 
 					Entity_CampRt entityCmRt2 = serviceDb.createCampRtMsg(contactsresult1);
 

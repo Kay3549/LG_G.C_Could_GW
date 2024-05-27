@@ -40,7 +40,7 @@ import reactor.core.scheduler.Schedulers;
 
 @RestController
 @Slf4j
-public class ControllerCallBot extends ServiceJson {
+public class ControllerCallBot  {
 
 	private final InterfaceDBPostgreSQL serviceDb;
 	private final InterfaceWebClient serviceWeb;
@@ -105,7 +105,7 @@ public class ControllerCallBot extends ServiceJson {
 
 			try {
 
-				row_result = ExtractValCallBot(msg, 0); // 뽑아온다.cpid::cpsq::cske::csno::tkda::flag
+				row_result = ServiceJson.extractStrVal("ExtractValCallBot", msg, 0);// 뽑아온다.cpid::cpsq::cske::csno::tkda::flag
 
 				Entity_ContactLt enContactLt = serviceDb.createContactLtMsg(row_result);// ContactLt 테이블에 들어갈 값들을
 				// Entity_ContactLt 객체에 매핑시킨다.
@@ -114,12 +114,12 @@ public class ControllerCallBot extends ServiceJson {
 				result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);// 캠페인 아이디로
 //																					// "/api/v2/outbound/campaigns/{campaignId}"호출
 //																					// 후 결과 가져온다.
-				res = ExtractContactLtId(result);
+				res = ServiceJson.extractStrVal("ExtractContactLtId", result);
 				contactLtId = res.split("::")[0];
 
 				for (int i = 0; i < cntofmsg; i++) {
 
-					row_result = ExtractValCallBot(msg, i); // 뽑아온다.cpid::cpsq::cske::csno::tkda::flag
+					row_result = ServiceJson.extractStrVal("ExtractValCallBot", msg, i); // 뽑아온다.cpid::cpsq::cske::csno::tkda::flag
 
 					enContactLt = serviceDb.createContactLtMsg(row_result);// ContactLt 테이블에 들어갈 값들을
 					// Entity_ContactLt 객체에 매핑시킨다.
@@ -197,7 +197,7 @@ public class ControllerCallBot extends ServiceJson {
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						log.info("Nomatch contactId");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ExtractContactLtId(result); // 가져온 결과에서 contactlistid,queueid만 추출.
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서 contactlistid,queueid만 추출.
 						contactLtId = res.split("::")[0];
 
 						String division = enCallbotRt.getDivisionid();
@@ -260,7 +260,7 @@ public class ControllerCallBot extends ServiceJson {
 
 		// 캠페인이 어느 비즈니스 로직인지 판단하기 위해서 일단 목록 중 하나만 꺼내서 확인해 보도록한다.
 		// 왜냐면 나머지는 똑같을테니.
-		String contactsresult = ExtractContacts56(result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로
+		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로
 																// 넣는다.
 		Entity_CampRt entityCmRt = serviceDb.createCampRtMsg(contactsresult);// contactsresult값으로
 																				// entity하나를 만든다.
@@ -277,7 +277,7 @@ public class ControllerCallBot extends ServiceJson {
 
 			for (int i = 0; i < values.size(); i++) {
 
-				contactsresult = ExtractContacts56(result, i);
+				contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, i);
 				if (contactsresult.equals("")) {
 					log.info("No value, skip to next");
 					continue;
@@ -326,7 +326,7 @@ public class ControllerCallBot extends ServiceJson {
 
 				for (int i = 0; i < values.size(); i++) {
 
-					String contactsresult1 = ExtractContacts56(result, i);
+					String contactsresult1 = ServiceJson.extractStrVal("ExtractContacts56",result, i);
 
 					Entity_CampRt entityCmRt2 = serviceDb.createCampRtMsg(contactsresult1);
 

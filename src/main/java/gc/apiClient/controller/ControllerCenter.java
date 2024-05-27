@@ -47,7 +47,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @Slf4j
-public class ControllerCenter extends ServiceJson {
+public class ControllerCenter  {
 
 	private final InterfaceDBPostgreSQL serviceDb;
 	private final InterfaceWebClient serviceWeb;
@@ -100,7 +100,9 @@ public class ControllerCenter extends ServiceJson {
 
 				result = serviceWeb.GetApiRequet("campaignId");// 제네시스 api 호출. 'campaignId'는 'WebClientApp'클래스에 미리 정의 해둔
 																// endpoint.
-				size = CampaignListSize(result); // G.C에서 불러온 캠페인 갯수.
+				
+				size = ServiceJson.extractIntVal("CampaignListSize", result);// G.C에서 불러온 캠페인 갯수.
+				
 				numberOfRecords = serviceDb.getRecordCount(); // 현재 레코드 갯수.
 
 				if (size == numberOfRecords) {// 조회된 캠페인의 개수와 현재 db에 저장된 캠페인 정보의 숫자가 동일하다. 즉, 새로 생성된 캠페인이 없다.
@@ -114,8 +116,10 @@ public class ControllerCenter extends ServiceJson {
 					while (reps-- > 0) {// reps가 0이 될 때까지 reps를 줄여나가면서 반복.
 
 						log.info("{}번째 인덱스 ", reps);
-						row_result = ExtractValCrm12(result, reps); // 결과 값 : cpid::coid::cpna::division ->
-																	// 캠페인아이디::테넌트아이디::캠페인명::디비전
+//						row_result = ExtractValCrm12(result, reps); // 결과 값 : cpid::coid::cpna::division ->
+//																	// 캠페인아이디::테넌트아이디::캠페인명::디비전
+						
+						row_result = ServiceJson.extractStrVal("ExtractValCrm12", result, reps); 
 
 						division = row_result.split("::")[3];
 
@@ -231,7 +235,7 @@ public class ControllerCenter extends ServiceJson {
 			int port = request.getRemotePort();
 			log.info("Request received from IP address and Port => {}:{}", ipAddress, port);
 
-			row_result = ExtractCampMaUpdateOrDel(msg); // cpid::coid::cpna::divisionid::action
+			row_result = ServiceJson.extractStrVal("ExtractCampMaUpdateOrDel", msg);
 			String division = row_result.split("::")[3];
 			String action = row_result.split("::")[4];
 
@@ -410,7 +414,7 @@ public class ControllerCenter extends ServiceJson {
 
 		try {
 
-			String result = ExtrSaveRtData(msg);
+			String result = ServiceJson.extractStrVal("ExtrSaveRtData", msg);
 			String division = result.split("::")[2];
 
 			Map<String, String> properties = customProperties.getDivision();
@@ -485,7 +489,7 @@ public class ControllerCenter extends ServiceJson {
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						log.info("Nomatch contactId");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ExtractContactLtId(result); // 가져온 결과에서 contactlistid,queueid만 추출.
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서 contactlistid,queueid만 추출.
 						contactLtId = res.split("::")[0];
 
 						String division = enApimRt.getDivisionid(); // 첫번째 레코드부터 cpid를 가지고 온다.
@@ -549,8 +553,7 @@ public class ControllerCenter extends ServiceJson {
 
 		// 캠페인이 어느 비즈니스 로직인지 판단하기 위해서 일단 목록 중 하나만 꺼내서 확인해 보도록한다.
 		// 왜냐면 나머지는 똑같을테니.
-		String contactsresult = ExtractContacts56(result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로
-																// 넣는다.
+		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로 넣는다. 
 		Entity_CampRt entityCmRt = serviceDb.createCampRtMsg(contactsresult);// contactsresult값으로
 																				// entity하나를 만든다.
 		Character tkda = entityCmRt.getTkda().charAt(0);// 그리고 비즈니스 로직을 구분하게 해줄 수 있는 토큰데이터를 구해온다.
@@ -566,7 +569,7 @@ public class ControllerCenter extends ServiceJson {
 
 			for (int i = 0; i < values.size(); i++) {
 
-				contactsresult = ExtractContacts56(result, i);
+				contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, i);
 				if (contactsresult.equals("")) {
 					log.info("No value, skip to next");
 					continue;
@@ -617,7 +620,7 @@ public class ControllerCenter extends ServiceJson {
 
 				for (int i = 0; i < values.size(); i++) {
 
-					String contactsresult1 = ExtractContacts56(result, i);
+					String contactsresult1 = ServiceJson.extractStrVal("ExtractContacts56",result, i);
 
 					Entity_CampRt entityCmRt2 = serviceDb.createCampRtMsg(contactsresult1);
 
