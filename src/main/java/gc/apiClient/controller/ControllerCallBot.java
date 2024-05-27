@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 
-import org.json.JSONObject;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -25,42 +24,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gc.apiClient.BusinessLogic;
 import gc.apiClient.customproperties.CustomProperties;
-import gc.apiClient.entity.Entity_ToApim;
 import gc.apiClient.entity.postgresql.Entity_CallbotRt;
 import gc.apiClient.entity.postgresql.Entity_CampRt;
 import gc.apiClient.entity.postgresql.Entity_ContactLt;
 import gc.apiClient.interfaceCollection.InterfaceDBPostgreSQL;
 import gc.apiClient.interfaceCollection.InterfaceWebClient;
-import gc.apiClient.messages.MessageToApim;
 import gc.apiClient.messages.MessageToProducer;
 import gc.apiClient.service.ServiceJson;
+import kafMsges.MsgCallbot;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @RestController
 @Slf4j
-public class ControllerCallBot  {
+public class ControllerCallBot {
 
 	private final InterfaceDBPostgreSQL serviceDb;
 	private final InterfaceWebClient serviceWeb;
 	private final CustomProperties customProperties;
-	private static List<Entity_ToApim> apimEntitylt = new ArrayList<Entity_ToApim>();
 
-	public ControllerCallBot(InterfaceDBPostgreSQL serviceDb,
-			InterfaceWebClient serviceWeb, CustomProperties customProperties) {
+	public ControllerCallBot(InterfaceDBPostgreSQL serviceDb, InterfaceWebClient serviceWeb,
+			CustomProperties customProperties) {
 		this.serviceDb = serviceDb;
 		this.serviceWeb = serviceWeb;
 		this.customProperties = customProperties;
 	}
-	
-	@Scheduled(fixedRate = 60000)//1분 간격으로 'SendCallBotRt' 비동기적으로 실행. 
+
+	@Scheduled(fixedRate = 60000) // 1분 간격으로 'SendCallBotRt' 비동기적으로 실행.
 	public void scheduledMethod() {
-		
-		Mono.fromCallable(() -> SendCallBotRt() ).subscribeOn(Schedulers.boundedElastic()).subscribe();
+
+		Mono.fromCallable(() -> SendCallBotRt()).subscribeOn(Schedulers.boundedElastic()).subscribe();
 
 	}
-
 
 	@PostMapping("/contactlt/{topic}")
 	public Mono<ResponseEntity<String>> CallbotMsgFrmCnsumer(@PathVariable("topic") String tranId,
@@ -134,7 +130,7 @@ public class ControllerCallBot  {
 
 					} catch (DataIntegrityViolationException ex) {
 //						log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-						
+
 					} catch (DataAccessException ex) {
 						log.error("DataAccessException 발생 : {}", ex.getMessage());
 					}
@@ -159,7 +155,6 @@ public class ControllerCallBot  {
 		}
 	}
 
-	
 	@GetMapping("/sendcallbotrt")
 	public Mono<ResponseEntity<String>> SendCallBotRt() {
 
@@ -197,7 +192,9 @@ public class ControllerCallBot  {
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						log.info("Nomatch contactId");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서 contactlistid,queueid만 추출.
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
+																								// contactlistid,queueid만
+																								// 추출.
 						contactLtId = res.split("::")[0];
 
 						String division = enCallbotRt.getDivisionid();
@@ -215,7 +212,7 @@ public class ControllerCallBot  {
 					}
 					contactlists.get(contactLtId).add(cqsq);
 					serviceDb.DelCallBotRtById(enCallbotRt.getId());
-					
+
 					log.info("Add value into contactListId named '{}'", contactLtId);
 
 					for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
@@ -228,7 +225,7 @@ public class ControllerCallBot  {
 					}
 
 				}
-				
+
 				for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
 
 					divisionName = mapdivision.get(entry.getKey());
@@ -246,10 +243,8 @@ public class ControllerCallBot  {
 		return Mono.just(ResponseEntity.ok("Successfully processed the message."));
 	}
 
-	
 	public Mono<Void> Roop(String contactLtId, List<String> values, String divisionName) throws Exception {
 
-		ObjectMapper objectMapper = null;
 		String result = serviceWeb.PostContactLtApiBulk("contactList", contactLtId, values);
 
 		if (result.equals("[]")) {
@@ -260,109 +255,45 @@ public class ControllerCallBot  {
 
 		// 캠페인이 어느 비즈니스 로직인지 판단하기 위해서 일단 목록 중 하나만 꺼내서 확인해 보도록한다.
 		// 왜냐면 나머지는 똑같을테니.
-		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로
-																// 넣는다.
+		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56", result, 0);// JsonString 결과값과 조회하고 싶은
+																							// 인덱스(첫번째)를 인자로
+		// 넣는다.
 		Entity_CampRt entityCmRt = serviceDb.createCampRtMsg(contactsresult);// contactsresult값으로
 																				// entity하나를 만든다.
 		Character tkda = entityCmRt.getTkda().charAt(0);// 그리고 비즈니스 로직을 구분하게 해줄 수 있는 토큰데이터를 구해온다.
 
 		// 토큰데이터와 디비젼네임을 인자로 넘겨서 어떤 비지니스 로직인지, 토픽은 어떤 것으로 해야하는지를 결과 값으로 반환 받는다.
 		Map<String, String> businessLogic = BusinessLogic.SelectedBusiness(tkda, divisionName);
-		String business = businessLogic.get("business");
 		String topic_id = businessLogic.get("topic_id");
 
-		switch (business) {
-		case "UCRM": // UCRM일 경우.
-		case "CALLBOT": // 콜봇일 경우.
+		for (int i = 0; i < values.size(); i++) {
 
-			for (int i = 0; i < values.size(); i++) {
-
-				contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, i);
-				if (contactsresult.equals("")) {
-					log.info("No value, skip to next");
-					continue;
-				}
-
-				entityCmRt = serviceDb.createCampRtMsg(contactsresult);// db 인서트 하기 위한 entity.
-
-				int dirt = entityCmRt.getDirt();// 응답코드
-
-				if ((business.equals("UCRM")) && (dirt == 1)) {// URM이면서 정상일 때.
-
-				} else {
-					JSONObject toproducer = serviceDb.createCampRtJson(entityCmRt, business);// producer로
-																								// 보내기
-																								// 위한
-					// entity.
-					objectMapper = new ObjectMapper();
-
-					try {
-						String jsonString = toproducer.toString();
-
-						MessageToProducer producer = new MessageToProducer();
-						String endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, jsonString);
-
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-
-				// db인서트
-				try {
-					serviceDb.InsertCampRt(entityCmRt);
-				} catch (DataIntegrityViolationException ex) {
-					log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-				} catch (DataAccessException ex) {
-					log.error("DataAccessException 발생 : {}", ex.getMessage());
-				}
+			contactsresult = ServiceJson.extractStrVal("ExtractContacts56", result, i);
+			if (contactsresult.equals("")) {
+				log.info("No value, skip to next");
+				continue;
 			}
-			values.clear();
-			return Mono.empty();
 
-		default:
+			entityCmRt = serviceDb.createCampRtMsg(contactsresult);// db 인서트 하기 위한 entity.
 
+			MsgCallbot msgcallbot = new MsgCallbot(serviceDb);
+			String msg = msgcallbot.rtMassage(entityCmRt);
+
+			MessageToProducer producer = new MessageToProducer();
+			String endpoint = "/gcapi/post/" + topic_id;
+			producer.sendMsgToProducer(endpoint, msg);
+
+			// db인서트
 			try {
-
-				for (int i = 0; i < values.size(); i++) {
-
-					String contactsresult1 = ServiceJson.extractStrVal("ExtractContacts56",result, i);
-
-					Entity_CampRt entityCmRt2 = serviceDb.createCampRtMsg(contactsresult1);
-
-					int dirt = entityCmRt2.getDirt();// 응답코드
-					int dict = entityCmRt2.getDict();// 발신시도 횟수
-					String tokendata = entityCmRt2.getTkda();// 토큰데이터
-
-					Entity_ToApim enToApim = new Entity_ToApim();
-					enToApim.setDirt(dirt);
-					enToApim.setDict(dict);
-					enToApim.setTkda(tokendata);
-
-					apimEntitylt.add(enToApim);
-				}
-
-				objectMapper = new ObjectMapper();
-
-				String jsonString = objectMapper.writeValueAsString(apimEntitylt);
-
-				// localhost:8084/dspRslt
-				// 192.168.219.134:8084/dspRslt
-				MessageToApim apim = new MessageToApim();
-				String endpoint = "/dspRslt";
-				apim.sendMsgToApim(endpoint, jsonString);
-				log.info("CAMPRT 로직, APIM으로 보냄. : {} ", jsonString);
-				apimEntitylt.clear();
-				values.clear();
-
-			} catch (Exception e) {
-				e.printStackTrace();
-				log.error("Error Message : {}", e.getMessage());
+				serviceDb.InsertCampRt(entityCmRt);
+			} catch (DataIntegrityViolationException ex) {
+				log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
+			} catch (DataAccessException ex) {
+				log.error("DataAccessException 발생 : {}", ex.getMessage());
 			}
-			return Mono.empty();
 		}
+		values.clear();
+		return Mono.empty();
 
 	}
-
-
 }

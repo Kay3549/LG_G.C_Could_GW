@@ -10,7 +10,6 @@ import java.util.Map;
 import reactor.core.scheduler.Schedulers;
 import org.springframework.data.domain.Page;
 
-import org.json.JSONObject;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -21,13 +20,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gc.apiClient.BusinessLogic;
 import gc.apiClient.customproperties.CustomProperties;
-import gc.apiClient.entity.Entity_CampMaJson;
-import gc.apiClient.entity.Entity_CampMaJsonUcrm;
 import gc.apiClient.entity.Entity_ToApim;
 import gc.apiClient.entity.postgresql.Entity_ApimRt;
 import gc.apiClient.entity.postgresql.Entity_CallbotRt;
@@ -42,12 +38,15 @@ import gc.apiClient.service.ServiceJson;
 import gc.apiClient.webclient.WebClientApp;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import kafMsges.MsgApim;
+import kafMsges.MsgCallbot;
+import kafMsges.MsgUcrm;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @RestController
 @Slf4j
-public class ControllerCenter  {
+public class ControllerCenter {
 
 	private final InterfaceDBPostgreSQL serviceDb;
 	private final InterfaceWebClient serviceWeb;
@@ -88,7 +87,8 @@ public class ControllerCenter  {
 		String division = "";
 		String business = "";
 		String endpoint = "/gcapi/post/" + topic_id;
-		ObjectMapper objectMapper = null;
+		String msg = "";
+		MessageToProducer producer = null;
 		int size = 0;
 		int numberOfRecords = 0;
 
@@ -100,9 +100,9 @@ public class ControllerCenter  {
 
 				result = serviceWeb.GetApiRequet("campaignId");// 제네시스 api 호출. 'campaignId'는 'WebClientApp'클래스에 미리 정의 해둔
 																// endpoint.
-				
+
 				size = ServiceJson.extractIntVal("CampaignListSize", result);// G.C에서 불러온 캠페인 갯수.
-				
+
 				numberOfRecords = serviceDb.getRecordCount(); // 현재 레코드 갯수.
 
 				if (size == numberOfRecords) {// 조회된 캠페인의 개수와 현재 db에 저장된 캠페인 정보의 숫자가 동일하다. 즉, 새로 생성된 캠페인이 없다.
@@ -118,8 +118,8 @@ public class ControllerCenter  {
 						log.info("{}번째 인덱스 ", reps);
 //						row_result = ExtractValCrm12(result, reps); // 결과 값 : cpid::coid::cpna::division ->
 //																	// 캠페인아이디::테넌트아이디::캠페인명::디비전
-						
-						row_result = ServiceJson.extractStrVal("ExtractValCrm12", result, reps); 
+
+						row_result = ServiceJson.extractStrVal("ExtractValCrm12", result, reps);
 
 						division = row_result.split("::")[3];
 
@@ -132,57 +132,44 @@ public class ControllerCenter  {
 
 						switch (business) {
 						case "UCRM":
-							objectMapper = new ObjectMapper();
-							Entity_CampMaJsonUcrm enCampMaJson1 = serviceDb.JsonCampMaUcrm(enCampMa, "insert");
+
+							MsgUcrm msgucrm = new MsgUcrm();
+							msg = msgucrm.maMassage(enCampMa, "insert");
+
 							try {
-
-								try {
-									serviceDb.InsertCampMa(enCampMa);
-								} catch (DataIntegrityViolationException ex) {
-									log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-									continue;
-								} catch (DataAccessException ex) {
-									log.error("DataAccessException 발생 : {}", ex.getMessage());
-									continue;
-								}
-
-								String jsonString = objectMapper.writeValueAsString(enCampMaJson1);
-								log.info("jsonString : {}", jsonString);
-								MessageToProducer producer = new MessageToProducer();
-								endpoint = "/gcapi/post/" + topic_id;
-								producer.sendMsgToProducer(endpoint, jsonString);
-
-							} catch (JsonProcessingException e) {
-								e.printStackTrace();
+								serviceDb.InsertCampMa(enCampMa);
+							} catch (DataIntegrityViolationException ex) {
+								log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
+								continue;
+							} catch (DataAccessException ex) {
+								log.error("DataAccessException 발생 : {}", ex.getMessage());
+								continue;
 							}
+
+							producer = new MessageToProducer();
+							endpoint = "/gcapi/post/" + topic_id;
+							producer.sendMsgToProducer(endpoint, msg);
 
 							break;
 
 						case "Callbot":
 
-							objectMapper = new ObjectMapper();
-							Entity_CampMaJson enCampMaJson = serviceDb.JsonCampMaCallbot(enCampMa, "insert");
+							MsgCallbot msgcallbot = new MsgCallbot();
+							msg = msgcallbot.maMassage(enCampMa, "insert");
+
 							try {
-
-								try {
-									serviceDb.InsertCampMa(enCampMa);
-								} catch (DataIntegrityViolationException ex) {
-									log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-									continue;
-								} catch (DataAccessException ex) {
-									log.error("DataAccessException 발생 : {}", ex.getMessage());
-									continue;
-								}
-
-								String jsonString = objectMapper.writeValueAsString(enCampMaJson);
-								log.info("jsonString : {}", jsonString);
-								MessageToProducer producer = new MessageToProducer();
-								endpoint = "/gcapi/post/" + topic_id;
-								producer.sendMsgToProducer(endpoint, jsonString);
-
-							} catch (JsonProcessingException e) {
-								e.printStackTrace();
+								serviceDb.InsertCampMa(enCampMa);
+							} catch (DataIntegrityViolationException ex) {
+								log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
+								continue;
+							} catch (DataAccessException ex) {
+								log.error("DataAccessException 발생 : {}", ex.getMessage());
+								continue;
 							}
+
+							producer = new MessageToProducer();
+							endpoint = "/gcapi/post/" + topic_id;
+							producer.sendMsgToProducer(endpoint, msg);
 
 							break;
 
@@ -198,14 +185,15 @@ public class ControllerCenter  {
 								continue;
 							}
 
-							String jsonString = serviceDb.createMaMsgApim(enCampMa, "insert").toString();
-							log.info("jsonString : {}", jsonString);
+							MsgApim msgapim = new MsgApim();
+							msg = msgapim.maMassage(enCampMa, "insert");
+
 							// localhost:8084/dspRslt
 							// 192.168.219.134:8084/dspRslt
 							MessageToApim apim = new MessageToApim();
 							endpoint = "/cmpnMstrRegist";
-							apim.sendMsgToApim(endpoint, jsonString);
-							log.info("CAMPMA 로직, APIM으로 보냄. : {}", jsonString);
+							apim.sendMsgToApim(endpoint, msg);
+							log.info("CAMPMA 로직, APIM으로 보냄. : {}", msg);
 
 							break;
 						}
@@ -251,15 +239,14 @@ public class ControllerCenter  {
 			String endpoint = "";
 			String business = businessLogic.get("business");
 			String topic_id = businessLogic.get("topic_id");
-			ObjectMapper objectMapper = null;
 
 			switch (business) {
 			case "UCRM":
 
 				if (action.equals("update")) {
-
-					objectMapper = new ObjectMapper();
-					Entity_CampMaJsonUcrm enCampMaJson1 = serviceDb.JsonCampMaUcrm(enCampMa, action);
+					
+					MsgUcrm msgucrm = new MsgUcrm();
+					msg = msgucrm.maMassage(enCampMa, action);
 
 					log.info("Cpid of target record for updating : {}", cpid);
 					log.info("New value of Campaign name : {}", cpna);
@@ -268,11 +255,10 @@ public class ControllerCenter  {
 
 						serviceDb.UpdateCampMa(cpid, cpna);
 
-						String jsonString = objectMapper.writeValueAsString(enCampMaJson1);
-						log.info("jsonString : {}", jsonString);
+						log.info("jsonString : {}", msg);
 						MessageToProducer producer = new MessageToProducer();
 						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, jsonString);
+						producer.sendMsgToProducer(endpoint, msg);
 
 					} catch (EntityNotFoundException ex) {
 
@@ -280,13 +266,12 @@ public class ControllerCenter  {
 						enCampMa = serviceDb.CreateEnCampMa(row_result);
 						serviceDb.InsertCampMa(enCampMa);
 
-						enCampMaJson1 = serviceDb.JsonCampMaUcrm(enCampMa, "insert");
-
-						String jsonString = objectMapper.writeValueAsString(enCampMaJson1);
-						log.info("jsonString : {}", jsonString);
+						msg = msgucrm.maMassage(enCampMa, "insert");
+						
+						log.info("jsonString : {}", msg);
 						MessageToProducer producer = new MessageToProducer();
 						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, jsonString);
+						producer.sendMsgToProducer(endpoint, msg);
 
 						return Mono.just(ResponseEntity.ok(
 								"There is no record which matched with request cpid. so it just has been inserted."));
@@ -304,9 +289,9 @@ public class ControllerCenter  {
 
 			case "Callbot":
 
-				objectMapper = new ObjectMapper();
 
-				Entity_CampMaJson enCampMaJson = serviceDb.JsonCampMaCallbot(enCampMa, action);
+				MsgCallbot msgcallbot = new MsgCallbot();
+				msg = msgcallbot.maMassage(enCampMa, action);
 
 				// 테이블에 Update, Delete logic 추가.
 				log.info(action);
@@ -318,12 +303,10 @@ public class ControllerCenter  {
 					try {
 
 						serviceDb.UpdateCampMa(cpid, cpna);
-
-						String jsonString = objectMapper.writeValueAsString(enCampMaJson);
-						log.info("jsonString : {}", jsonString);
+						log.info("jsonString : {}", msg);
 						MessageToProducer producer = new MessageToProducer();
 						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, jsonString);
+						producer.sendMsgToProducer(endpoint, msg);
 
 					} catch (EntityNotFoundException ex) {
 
@@ -331,13 +314,12 @@ public class ControllerCenter  {
 						enCampMa = serviceDb.CreateEnCampMa(row_result);
 						serviceDb.InsertCampMa(enCampMa);
 
-						enCampMaJson = serviceDb.JsonCampMaCallbot(enCampMa, "insert");
+						msg = msgcallbot.maMassage(enCampMa, "insert");
 
-						String jsonString = objectMapper.writeValueAsString(enCampMaJson);
-						log.info("jsonString : {}", jsonString);
+						log.info("jsonString : {}", msg);
 						MessageToProducer producer = new MessageToProducer();
 						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, jsonString);
+						producer.sendMsgToProducer(endpoint, msg);
 
 						return Mono.just(ResponseEntity.ok(
 								"There is no record which matched with request cpid. so it just has been inserted."));
@@ -354,10 +336,12 @@ public class ControllerCenter  {
 				}
 
 			default:
+				
+				MsgApim msgapim = new MsgApim();
+				msg = msgapim.maMassage(enCampMa, action);
 
-				String jsonString = serviceDb.createMaMsgApim(enCampMa, action).toString();
 				MessageToApim apim = new MessageToApim();
-				log.info("jsonString : {}", jsonString);
+				log.info("jsonString : {}", msg);
 
 				if (action.equals("update")) {
 
@@ -368,22 +352,22 @@ public class ControllerCenter  {
 
 						serviceDb.UpdateCampMa(cpid, cpna);
 						endpoint = "/cmpnMstrRegist";
-						apim.sendMsgToApim(endpoint, jsonString);
-						log.info("CAMPMA UPDATE로직,  APIM으로 보냄. : {}", jsonString);
-						
+						apim.sendMsgToApim(endpoint, msg);
+						log.info("CAMPMA UPDATE로직,  APIM으로 보냄. : {}", msg);
+
 					} catch (EntityNotFoundException ex) {
 
 						log.error("EntityNotFoundException occurred: {} ", ex.getMessage());
 						enCampMa = serviceDb.CreateEnCampMa(row_result);
 						serviceDb.InsertCampMa(enCampMa);
 
-						jsonString = serviceDb.createMaMsgApim(enCampMa, "insert").toString();
-						log.info("jsonString : {}", jsonString);
+						msg = msgapim.maMassage(enCampMa, "insert");
+						log.info("jsonString : {}", msg);
 						// localhost:8084/dspRslt
 						// 192.168.219.134:8084/dspRslt
 						apim = new MessageToApim();
 						endpoint = "/cmpnMstrRegist";
-						apim.sendMsgToApim(endpoint, jsonString);
+						apim.sendMsgToApim(endpoint, msg);
 
 						return Mono.just(ResponseEntity.ok(
 								"There is no record which matched with request cpid. so it just has been inserted."));
@@ -405,7 +389,6 @@ public class ControllerCenter  {
 		}
 	}
 
-	
 	@PostMapping("/SaveRtData")
 	public Mono<ResponseEntity<String>> SaveRtData(@RequestBody String msg) {
 
@@ -489,7 +472,9 @@ public class ControllerCenter  {
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						log.info("Nomatch contactId");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서 contactlistid,queueid만 추출.
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
+																								// contactlistid,queueid만
+																								// 추출.
 						contactLtId = res.split("::")[0];
 
 						String division = enApimRt.getDivisionid(); // 첫번째 레코드부터 cpid를 가지고 온다.
@@ -553,109 +538,37 @@ public class ControllerCenter  {
 
 		// 캠페인이 어느 비즈니스 로직인지 판단하기 위해서 일단 목록 중 하나만 꺼내서 확인해 보도록한다.
 		// 왜냐면 나머지는 똑같을테니.
-		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, 0);// JsonString 결과값과 조회하고 싶은 인덱스(첫번째)를 인자로 넣는다. 
+		String contactsresult = ServiceJson.extractStrVal("ExtractContacts56", result, 0);// JsonString 결과값과 조회하고 싶은
+																							// 인덱스(첫번째)를 인자로 넣는다.
 		Entity_CampRt entityCmRt = serviceDb.createCampRtMsg(contactsresult);// contactsresult값으로
 																				// entity하나를 만든다.
-		Character tkda = entityCmRt.getTkda().charAt(0);// 그리고 비즈니스 로직을 구분하게 해줄 수 있는 토큰데이터를 구해온다.
 
-		// 토큰데이터와 디비젼네임을 인자로 넘겨서 어떤 비지니스 로직인지, 토픽은 어떤 것으로 해야하는지를 결과 값으로 반환 받는다.
-		Map<String, String> businessLogic = BusinessLogic.SelectedBusiness(tkda, divisionName);
-		String business = businessLogic.get("business");
-		String topic_id = businessLogic.get("topic_id");
+		MsgApim msgapim = new MsgApim();
+		Entity_ToApim enToApim = new Entity_ToApim();
+		for (int i = 0; i < values.size(); i++) {
 
-		switch (business) {
-		case "UCRM": // UCRM일 경우.
-		case "CALLBOT": // 콜봇일 경우.
+			contactsresult = ServiceJson.extractStrVal("ExtractContacts56", result, i);
 
-			for (int i = 0; i < values.size(); i++) {
+			entityCmRt = serviceDb.createCampRtMsg(contactsresult);
+			enToApim = msgapim.rstMassage(entityCmRt);
 
-				contactsresult = ServiceJson.extractStrVal("ExtractContacts56",result, i);
-				if (contactsresult.equals("")) {
-					log.info("No value, skip to next");
-					continue;
-				}
-
-				entityCmRt = serviceDb.createCampRtMsg(contactsresult);// db 인서트 하기 위한 entity.
-
-				int dirt = entityCmRt.getDirt();// 응답코드
-
-				if ((business.equals("UCRM")) && (dirt == 1)) {// URM이면서 정상일 때.
-
-				} else {
-					JSONObject toproducer = serviceDb.createCampRtJson(entityCmRt, business);// producer로
-																								// 보내기
-																								// 위한
-					// entity.
-					objectMapper = new ObjectMapper();
-
-					try {
-						String jsonString = toproducer.toString();
-						log.info("JsonString Data : {}번째 {}", i, jsonString);
-
-						MessageToProducer producer = new MessageToProducer();
-						String endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, jsonString);
-
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-
-				// db인서트
-				try {
-					serviceDb.InsertCampRt(entityCmRt);
-				} catch (DataIntegrityViolationException ex) {
-					log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-				} catch (DataAccessException ex) {
-					log.error("DataAccessException 발생 : {}", ex.getMessage());
-				}
-			}
-
-			values.clear();
-			return Mono.empty();
-
-		default:
-
-			try {
-
-				for (int i = 0; i < values.size(); i++) {
-
-					String contactsresult1 = ServiceJson.extractStrVal("ExtractContacts56",result, i);
-
-					Entity_CampRt entityCmRt2 = serviceDb.createCampRtMsg(contactsresult1);
-
-					int dirt = entityCmRt2.getDirt();// 응답코드
-					int dict = entityCmRt2.getDict();// 발신시도 횟수
-					String tokendata = entityCmRt2.getTkda();// 토큰데이터
-
-					Entity_ToApim enToApim = new Entity_ToApim();
-					enToApim.setDirt(dirt);
-					enToApim.setDict(dict);
-					enToApim.setTkda(tokendata);
-
-					apimEntitylt.add(enToApim);
-				}
-
-				objectMapper = new ObjectMapper();
-
-				String jsonString = objectMapper.writeValueAsString(apimEntitylt);
-
-				// localhost:8084/dspRslt
-				// 192.168.219.134:8084/dspRslt
-				MessageToApim apim = new MessageToApim();
-				String endpoint = "/dspRslt";
-				apim.sendMsgToApim(endpoint, jsonString);
-				log.info("CAMPRT 로직, APIM으로 보냄. : {} ", jsonString);
-				apimEntitylt.clear();
-				values.clear();
-
-			} catch (Exception e) {
-				e.printStackTrace();
-				log.error("Error Message : {}", e.getMessage());
-			}
-			return Mono.empty();
+			apimEntitylt.add(enToApim);
 		}
 
+		objectMapper = new ObjectMapper();
+
+		String jsonString = objectMapper.writeValueAsString(apimEntitylt);
+
+		// localhost:8084/dspRslt
+		// 192.168.219.134:8084/dspRslt
+		MessageToApim apim = new MessageToApim();
+		String endpoint = "/dspRslt";
+		apim.sendMsgToApim(endpoint, jsonString);
+		log.info("CAMPRT 로직, APIM으로 보냄. : {} ", jsonString);
+		apimEntitylt.clear();
+		values.clear();
+
+		return Mono.empty();
 	}
 
 	@GetMapping("/putput/{topic}")
@@ -691,20 +604,20 @@ public class ControllerCenter  {
 	public Mono<ResponseEntity<String>> getHealthCheckKafka() throws Exception {
 		return Mono.just(ResponseEntity.ok("TEST RESPONSE"));
 	}
-	
+
 	/**
 	 * [EKS] POD LivenessProbe 헬스체크
 	 */
-	private final Instant started = Instant.now(); 
-	
-    @GetMapping("/healthz")
-    public ResponseEntity<String> healthCheck() {
-        Duration duration = Duration.between(started, Instant.now());
-        if (duration.getSeconds() > 10) {
-            return ResponseEntity.status(500).body("error: " + duration.getSeconds());
-        } else {
-            return ResponseEntity.ok("ok");
-        }
-    }
+	private final Instant started = Instant.now();
+
+	@GetMapping("/healthz")
+	public ResponseEntity<String> healthCheck() {
+		Duration duration = Duration.between(started, Instant.now());
+		if (duration.getSeconds() > 10) {
+			return ResponseEntity.status(500).body("error: " + duration.getSeconds());
+		} else {
+			return ResponseEntity.ok("ok");
+		}
+	}
 
 }

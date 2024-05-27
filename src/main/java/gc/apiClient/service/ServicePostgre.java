@@ -4,10 +4,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.TimeZone;
 
@@ -20,15 +16,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import gc.apiClient.customproperties.CustomProperties;
-import gc.apiClient.datamapping.MappingCenter;
 import gc.apiClient.embeddable.ApimCampRt;
 import gc.apiClient.embeddable.CallBotCampRt;
 import gc.apiClient.embeddable.CampRt;
 import gc.apiClient.embeddable.ContactLtId;
 import gc.apiClient.embeddable.Ucrm;
 import gc.apiClient.embeddable.UcrmCampRt;
-import gc.apiClient.entity.Entity_CampMaJson;
-import gc.apiClient.entity.Entity_CampMaJsonUcrm;
 import gc.apiClient.entity.postgresql.Entity_ApimRt;
 import gc.apiClient.entity.postgresql.Entity_CallbotRt;
 import gc.apiClient.entity.postgresql.Entity_CampMa;
@@ -75,7 +68,8 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		this.repositoryUcrmRt = repositoryUcrmRt;
 		this.repositoryApimRt = repositoryApimRt;
 	}
-
+	
+	
 	// **Create
 
 	@Override
@@ -195,83 +189,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		return enCampRt;
 	}
 
-	@Override
-	public JSONObject createCampRtJson(Entity_CampRt enCampRt, String business) {// contactid(고객키)::contactListId::didt::dirt::cpid
-
-		JSONObject obj = new JSONObject();
-		try {
-			Date now = new Date();
-			SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
-			String topcDataIsueDtm = formatter.format(now);
-
-			long hubId = enCampRt.getHubid();
-			int dirt = enCampRt.getDirt();
-			int dict = enCampRt.getDict();
-			int cpSeq = enCampRt.getCamp_seq();
-			String coid = "";
-			String campid = enCampRt.getCpid();
-			String didt = "";
-
-			SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-			outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-			String formattedDateString = outputFormat.format(enCampRt.getDidt());
-			didt = formattedDateString;
-
-			dirt = enCampRt.getDirt();
-
-			ServiceWebClient crmapi1 = new ServiceWebClient();
-			String result = crmapi1.GetStatusApiRequet("campaign_stats", campid);
-			dict = ServiceJson.extractIntVal("ExtractDict", result);
-
-			Entity_CampMa enCampMa = new Entity_CampMa();
-
-			enCampMa = findCampMaByCpid(campid);
-			coid = Integer.toString(enCampMa.getCoid());
-			MappingCenter mappingData = new MappingCenter();
-			coid = mappingData.getCentercodeById(coid);
-			coid = coid != null ? coid : "EX";
-
-
-			if (business.equals("CALLBOT")) {
-
-				outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-				outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-				formattedDateString = outputFormat.format(enCampRt.getDidt());
-				didt = formattedDateString;
-
-				obj.put("topcDataIsueDtm", topcDataIsueDtm);
-				obj.put("cpId", campid);
-				obj.put("cpSeq", cpSeq);
-				obj.put("lastAttempt", didt);
-				obj.put("attmpNo", dict);
-				obj.put("lastResult", dirt);
-
-			} else {// UCRM
-				
-				String dateString = didt;
-				DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-				LocalDateTime dateTime = LocalDateTime.parse(dateString, format);
-				LocalDateTime adjustedDateTime = dateTime.plusHours(9);
-				
-				ZonedDateTime desiredTime = adjustedDateTime.atZone(ZoneId.of("UTC+09:00"));
-				String formattedTime = desiredTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-				obj.put("topcDataIsueDtm", topcDataIsueDtm);
-				obj.put("ibmHubId", hubId);
-				obj.put("centerCd", coid);
-				obj.put("lastAttempt", formattedTime);
-				obj.put("totAttempt", dict);
-				obj.put("lastResult", dirt);
-
-			}	
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			log.error("Error Message : {}", e.getMessage());
-		}
-		
-		return obj;
-	}
 
 	@Override
 	public Entity_CampMa CreateEnCampMa(String msg) { // cpid::coid::cpna::division
@@ -301,155 +218,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		return enCampMa;
 	}
 	
-
-	@Override
-	public Entity_CampMaJsonUcrm JsonCampMaUcrm(Entity_CampMa enCampMa, String datachgcd) throws Exception {
-
-		log.info(" ");
-		log.info("====== ClassName : ServicePostgre & Method : JsonCampMaUcrm ======");
-		Entity_CampMaJsonUcrm enCampMaJson = new Entity_CampMaJsonUcrm();
-
-		Date now = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
-		String topcDataIsueDtm = "";
-		String coid = "";
-		MappingCenter mappingData = new MappingCenter();
-
-		switch (datachgcd) {
-
-		case "insert":
-		case "update":
-
-			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
-			coid = coid != null ? coid : "EX";
-			enCampMaJson.setCenterCd(coid);
-			enCampMaJson.setCmpnId(enCampMa.getCpid());
-			enCampMaJson.setCmpnNm(enCampMa.getCpna());
-
-			topcDataIsueDtm = formatter.format(now);
-
-			enCampMaJson.setDataChgCd(datachgcd);
-			enCampMaJson.setDataDelYn("N");
-			enCampMaJson.setTopcDataIsueDtm(topcDataIsueDtm);
-
-			break;
-
-		default:
-
-			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
-			coid = coid != null ? coid : "EX";
-			enCampMaJson.setCenterCd(coid);
-			enCampMaJson.setCmpnId(enCampMa.getCpid());
-			enCampMaJson.setCmpnNm("");
-
-			topcDataIsueDtm = formatter.format(now);
-
-			enCampMaJson.setDataChgCd(datachgcd);
-			enCampMaJson.setDataDelYn("Y");
-			enCampMaJson.setTopcDataIsueDtm(topcDataIsueDtm);
-			break;
-		}
-
-		log.info("====== End JsonCampMaUcrm ======");
-		return enCampMaJson;
-	}
-
-	
-	@Override
-	public Entity_CampMaJson JsonCampMaCallbot(Entity_CampMa enCampMa, String datachgcd) { // cpid::cpna::division::coid
-
-		log.info(" ");
-		log.info("====== ClassName : ServicePostgre & Method : JsonCampMaCallbot ======");
-		Entity_CampMaJson enCampMaJson = new Entity_CampMaJson();
-
-		Date now = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
-		String topcDataIsueDtm = "";
-
-		switch (datachgcd) {
-
-		case "insert":
-		case "update":
-
-			enCampMaJson.setTenantId(Integer.toString(enCampMa.getCoid()));
-			enCampMaJson.setCmpnId(enCampMa.getCpid());
-			enCampMaJson.setCmpnNm(enCampMa.getCpna());
-
-			topcDataIsueDtm = formatter.format(now);
-
-			enCampMaJson.setDataChgCd(datachgcd);
-			enCampMaJson.setDataDelYn("N");
-			enCampMaJson.setTopcDataIsueDtm(topcDataIsueDtm);
-
-			break;
-
-		default:
-
-			enCampMaJson.setTenantId(Integer.toString(enCampMa.getCoid()));
-			enCampMaJson.setCmpnId(enCampMa.getCpid());
-			enCampMaJson.setCmpnNm("");
-
-			topcDataIsueDtm = formatter.format(now);
-
-			enCampMaJson.setDataChgCd(datachgcd);
-			enCampMaJson.setDataDelYn("Y");
-			enCampMaJson.setTopcDataIsueDtm(topcDataIsueDtm);
-			break;
-		}
-
-		log.info("====== End JsonCampMaCallbot ======");
-		return enCampMaJson;
-
-	}
-
-	@Override
-	public JSONObject createMaMsgApim(Entity_CampMa enCampMa, String datachgcd) throws Exception {
-
-		log.info(" ");
-		log.info("====== ClassName : ServicePostgre & Method : createMaMsgApim ======");
-
-		JSONObject obj = new JSONObject();
-		String coid = "";
-		MappingCenter mappingData = new MappingCenter();
-
-		switch (datachgcd) {
-
-		case "insert":
-
-			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
-			coid = coid != null ? coid : "EX";
-			obj.put("cpid", enCampMa.getCpid());
-			obj.put("gubun", coid);
-			obj.put("cpna", enCampMa.getCpna());
-			obj.put("cmd", datachgcd);
-
-			break;
-
-		case "update":
-
-			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
-			coid = coid != null ? coid : "EX";
-			obj.put("cpid", enCampMa.getCpid());
-			obj.put("gubun", coid);
-			obj.put("cpna", enCampMa.getCpna());
-			obj.put("cmd", datachgcd);
-
-			break;
-
-		default:
-
-			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
-			coid = coid != null ? coid : "EX";
-			obj.put("cpid", enCampMa.getCpid());
-			obj.put("gubun", coid);
-			obj.put("cpna", enCampMa.getCpna());
-			obj.put("cmd", datachgcd);
-
-			break;
-		}
-		log.info("====== End createMaMsgApim ======");
-		return obj;
-	}
 
 	@Override
 	public Entity_ContactLt createContactLtMsg(String msg) {// (콜봇에서 뽑아온거)cpid::cpsq::cske::csno::tkda::flag
@@ -515,10 +283,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	@Override
 	public Entity_Ucrm createUcrm(String msg) {
 
-//		log.info(" ");
-//		log.info("====== ClassName : ServicePostgre & Method : createUcrm ======");
-//		log.info("Incoming data : {}", msg);
-
 		Entity_Ucrm enUcrm = new Entity_Ucrm();
 		Ucrm id = new Ucrm();
 		JSONObject jsonObj = new JSONObject(msg);
@@ -546,20 +310,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			enUcrm.setTopcDataIsueSno(payloadObject.optString("topcDataIsueSno", ""));
 			enUcrm.setTrdtCntn(payloadObject.optString("trdtCntn", ""));
 			enUcrm.setWorkDivsCd(payloadObject.optString("workDivsCd", ""));
-
-//			log.info("citCmpnId : {}", payloadObject.getString("ctiCmpnId"));
-//			log.info("citCmpnSno : {}", payloadObject.getString("ctiCmpnSno"));
-//			log.info("cablTlno : {}", enUcrm.getCablTlno());
-//			log.info("custNm : {}", enUcrm.getCustNm());
-//			log.info("custTlno : {}", enUcrm.getCustTlno());
-//			log.info("hldrCustId : {}", enUcrm.getHldrCustId());
-//			log.info("subssDataChgCd : {}", enUcrm.getSubssDataChgCd());
-//			log.info("subssDataDelYn : {}", enUcrm.getSubssDataDelYn());
-//			log.info("tlno : {}", enUcrm.getTlno());
-//			log.info("topcDataIsueDtm : {}", enUcrm.getTopcDataIsueDtm());
-//			log.info("topcDataIsueSno : {}", enUcrm.getTopcDataIsueSno());
-//			log.info("trdtCntn : {}", enUcrm.getTrdtCntn());
-//			log.info("workDivsCd : {}", enUcrm.getWorkDivsCd());
 
 		} catch (Exception e) {
 			log.info("Error Messge : {}", e.getMessage());

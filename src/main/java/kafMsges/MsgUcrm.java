@@ -1,6 +1,10 @@
 package kafMsges;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -10,7 +14,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gc.apiClient.datamapping.MappingCenter;
-import gc.apiClient.entity.Entity_CampMaJson;
+import gc.apiClient.entity.Entity_CampMaJsonUcrm;
 import gc.apiClient.entity.postgresql.Entity_CampMa;
 import gc.apiClient.entity.postgresql.Entity_CampRt;
 import gc.apiClient.interfaceCollection.InterfaceDBPostgreSQL;
@@ -21,37 +25,40 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class MsgCallbot implements InterfaceKafMsg {
+public class MsgUcrm implements InterfaceKafMsg {
 
 	private InterfaceDBPostgreSQL serviceDb;
 
-	public MsgCallbot(InterfaceDBPostgreSQL serviceDb) {
+	public MsgUcrm(InterfaceDBPostgreSQL serviceDb) {
 		this.serviceDb = serviceDb;
 	}
-	
-	public MsgCallbot() {
+
+	public MsgUcrm() {
 	}
-	
 
 	@Override
 	public String maMassage(Entity_CampMa enCampMa, String datachgcd) throws Exception {
 
 		log.info(" ");
-		log.info("====== ClassName : MsgCallbot & Method : maMassage ======");
-		Entity_CampMaJson enCampMaJson = new Entity_CampMaJson();
+		log.info("====== ClassName : MsgUcrm & Method : maMassage ======");
+		Entity_CampMaJsonUcrm enCampMaJson = new Entity_CampMaJsonUcrm();
 		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonString = "";
 
 		Date now = new Date();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
 		String topcDataIsueDtm = "";
+		String coid = "";
+		MappingCenter mappingData = new MappingCenter();
 
 		switch (datachgcd) {
 
 		case "insert":
 		case "update":
 
-			enCampMaJson.setTenantId(Integer.toString(enCampMa.getCoid()));
+			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
+			coid = coid != null ? coid : "EX";
+			enCampMaJson.setCenterCd(coid);
 			enCampMaJson.setCmpnId(enCampMa.getCpid());
 			enCampMaJson.setCmpnNm(enCampMa.getCpna());
 
@@ -65,7 +72,9 @@ public class MsgCallbot implements InterfaceKafMsg {
 
 		default:
 
-			enCampMaJson.setTenantId(Integer.toString(enCampMa.getCoid()));
+			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
+			coid = coid != null ? coid : "EX";
+			enCampMaJson.setCenterCd(coid);
 			enCampMaJson.setCmpnId(enCampMa.getCpid());
 			enCampMaJson.setCmpnNm("");
 
@@ -92,9 +101,9 @@ public class MsgCallbot implements InterfaceKafMsg {
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
 			String topcDataIsueDtm = formatter.format(now);
 
+			long hubId = enCampRt.getHubid();
 			int dirt = enCampRt.getDirt();
 			int dict = enCampRt.getDict();
-			int cpSeq = enCampRt.getCamp_seq();
 			String coid = "";
 			String campid = enCampRt.getCpid();
 			String didt = "";
@@ -118,21 +127,22 @@ public class MsgCallbot implements InterfaceKafMsg {
 			coid = mappingData.getCentercodeById(coid);
 			coid = coid != null ? coid : "EX";
 
-			outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-			outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-			formattedDateString = outputFormat.format(enCampRt.getDidt());
-			didt = formattedDateString;
+			String dateString = didt;
+			DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+			LocalDateTime dateTime = LocalDateTime.parse(dateString, format);
+			LocalDateTime adjustedDateTime = dateTime.plusHours(9);
+
+			ZonedDateTime desiredTime = adjustedDateTime.atZone(ZoneId.of("UTC+09:00"));
+			String formattedTime = desiredTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
 			obj.put("topcDataIsueDtm", topcDataIsueDtm);
-			obj.put("cpId", campid);
-			obj.put("cpSeq", cpSeq);
-			obj.put("lastAttempt", didt);
-			obj.put("attmpNo", dict);
+			obj.put("ibmHubId", hubId);
+			obj.put("centerCd", coid);
+			obj.put("lastAttempt", formattedTime);
+			obj.put("totAttempt", dict);
 			obj.put("lastResult", dirt);
 
-		}
-
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Error Message : {}", e.getMessage());
 		}
