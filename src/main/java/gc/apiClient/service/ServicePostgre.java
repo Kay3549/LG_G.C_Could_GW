@@ -68,9 +68,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		this.repositoryUcrmRt = repositoryUcrmRt;
 		this.repositoryApimRt = repositoryApimRt;
 	}
-	
-	
-	// **Create
+
 
 	@Override
 	public Entity_CampRt createCampRtMsg(String cpid) {
@@ -95,7 +93,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		String contactId = parts[0];
 		String tkda = parts[5];
 		Date didt = null;
-		
+
 		try {
 
 			log.info("------ 들어온 rs를 분배해여 필요한 변수들 초기화 ------");
@@ -120,16 +118,16 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			}
 
 			SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-				log.info("didt(포맷 변경 전) : {}", parts[6]);
-				Date parsedDate = inputFormat.parse(parts[6]);
+			log.info("didt(포맷 변경 전) : {}", parts[6]);
+			Date parsedDate = inputFormat.parse(parts[6]);
 
-				// Formatting the parsed date to the desired format
-				SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-				outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-				String formattedDateString = outputFormat.format(parsedDate);
-				Date formattedDate = outputFormat.parse(formattedDateString);
-				didt = formattedDate;
-				log.info("didt(포맷 변경 후) : {}", didt);
+			// Formatting the parsed date to the desired format
+			SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+			String formattedDateString = outputFormat.format(parsedDate);
+			Date formattedDate = outputFormat.parse(formattedDateString);
+			didt = formattedDate;
+			log.info("didt(포맷 변경 후) : {}", didt);
 
 			log.info("dirt(맵핑 전) : {}", parts[4]);
 			Map<String, String> properties = customProperties.getProperties();
@@ -179,19 +177,17 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			log.info("------ return 하기 전 변수들의 최종 값 확인 ------");
 
 			log.info("===== End createCampRtMsg =====");
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Error Message : {}", e.getMessage());
 		}
-		
 
 		return enCampRt;
 	}
 
-
 	@Override
-	public Entity_CampMa CreateEnCampMa(String msg) { // cpid::coid::cpna::division
+	public Entity_CampMa CreateEnCampMa(String msg) { // 매개변수로 받는 String msg = > cpid::coid::cpna::division
 
 		log.info(" ");
 		log.info("====== ClassName : ServicePostgre & Method : CreateEnCampMa ======");
@@ -201,10 +197,12 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		String cpid = "";
 		int coid = 0;
 		String cpna = "";
+		String divisionId = "";
 
 		cpid = parts[0];// 캠페인 아이디
 		coid = Integer.parseInt(parts[1]); // 센터구분 코드
 		cpna = parts[2]; // 캠페인 명
+		divisionId = parts[3]; // 캠페인 명
 
 		enCampMa.setCpid(cpid);
 		enCampMa.setCoid(coid);
@@ -212,12 +210,13 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 
 		log.info("cpid : {}", cpid);
 		log.info("coid : {}", coid);
+		log.info("divisionId : {}", divisionId);
 		log.info("cpna : {}", cpna);
 
+		// db인서트 하기 위한 Entity_CampMa완성 후 리턴.
 		log.info("====== End CreateEnCampMa ======");
 		return enCampMa;
 	}
-	
 
 	@Override
 	public Entity_ContactLt createContactLtMsg(String msg) {// (콜봇에서 뽑아온거)cpid::cpsq::cske::csno::tkda::flag
@@ -254,8 +253,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	@Override
 	public Entity_ContactLt createContactUcrm(Entity_Ucrm entityUcrm) {
 
-//		log.info(" ");
-//		log.info("====== ClassName : ServicePostgre & Method : createContactUcrm ======");
 
 		Entity_ContactLt enContactLt = new Entity_ContactLt();
 		ContactLtId id = new ContactLtId();
@@ -267,21 +264,15 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			enContactLt.setFlag(entityUcrm.getWorkDivsCd());
 			enContactLt.setTkda(entityUcrm.getTrdtCntn());
 
-//			log.info("cpid : {}", entityUcrm.getId().getCpid());
-//			log.info("cpsq : {}", Integer.parseInt(entityUcrm.getId().getCpsq()));
-//			log.info("cske : {}", entityUcrm.getHldrCustId());
-//			log.info("flag : {}", entityUcrm.getWorkDivsCd());
-//			log.info("tkda : {}", entityUcrm.getTrdtCntn());
 		} catch (Exception e) {
 			log.info("Error Messge : {}", e.getMessage());
 		}
 
-//		log.info("====== End createContactUcrm ======");
 		return enContactLt;
 	}
 
 	@Override
-	public Entity_Ucrm createUcrm(String msg) {
+	public Entity_Ucrm createUcrm(String msg) throws Exception {
 
 		Entity_Ucrm enUcrm = new Entity_Ucrm();
 		Ucrm id = new Ucrm();
@@ -289,42 +280,33 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		String payload = jsonObj.getString("payload");
 		JSONObject payloadObject = new JSONObject(payload);
 
-		try {
-			String ctiCmpnId = payloadObject.optString("ctiCmpnId", "");
-			String ctiCmpnSno = payloadObject.optString("ctiCmpnSno", "");
-			String cablTlno = payloadObject.optString("cablTlno", "");
-			String custNm = payloadObject.optString("custNm", "");
-			String custTlno = payloadObject.optString("custTlno", "");
+		String ctiCmpnId = payloadObject.optString("ctiCmpnId", "");
+		String ctiCmpnSno = payloadObject.optString("ctiCmpnSno", "");
+		String cablTlno = payloadObject.optString("cablTlno", "");
+		String custNm = payloadObject.optString("custNm", "");
+		String custTlno = payloadObject.optString("custTlno", "");
 
-			id.setCpid(ctiCmpnId);
-			id.setCpsq(ctiCmpnSno);
-			enUcrm.setId(id);
-			enUcrm.setCablTlno(cablTlno);
-			enUcrm.setCustNm(custNm);
-			enUcrm.setCustTlno(custTlno);
-			enUcrm.setHldrCustId(payloadObject.optString("hldrCustId", ""));
-			enUcrm.setSubssDataChgCd(payloadObject.optString("subssDataChgCd", ""));
-			enUcrm.setSubssDataDelYn(payloadObject.optString("subssDataDelYn", ""));
-			enUcrm.setTlno(payloadObject.optString("tlno", ""));
-			enUcrm.setTopcDataIsueDtm(payloadObject.optString("topcDataIsueDtm", ""));
-			enUcrm.setTopcDataIsueSno(payloadObject.optString("topcDataIsueSno", ""));
-			enUcrm.setTrdtCntn(payloadObject.optString("trdtCntn", ""));
-			enUcrm.setWorkDivsCd(payloadObject.optString("workDivsCd", ""));
+		id.setCpid(ctiCmpnId);
+		id.setCpsq(ctiCmpnSno);
+		enUcrm.setId(id);
+		enUcrm.setCablTlno(cablTlno);
+		enUcrm.setCustNm(custNm);
+		enUcrm.setCustTlno(custTlno);
+		enUcrm.setHldrCustId(payloadObject.optString("hldrCustId", ""));
+		enUcrm.setSubssDataChgCd(payloadObject.optString("subssDataChgCd", ""));
+		enUcrm.setSubssDataDelYn(payloadObject.optString("subssDataDelYn", ""));
+		enUcrm.setTlno(payloadObject.optString("tlno", ""));
+		enUcrm.setTopcDataIsueDtm(payloadObject.optString("topcDataIsueDtm", ""));
+		enUcrm.setTopcDataIsueSno(payloadObject.optString("topcDataIsueSno", ""));
+		enUcrm.setTrdtCntn(payloadObject.optString("trdtCntn", ""));
+		enUcrm.setWorkDivsCd(payloadObject.optString("workDivsCd", ""));
 
-		} catch (Exception e) {
-			log.info("Error Messge : {}", e.getMessage());
-			e.printStackTrace();
-		}
-
-//		log.info("====== End createUcrm ======");
 		return enUcrm;
 	}
 
 	@Override
 	public String createContactLtGC(String msg) {
 		// 뽑아온다(콜봇).cpid::cpsq::cske::csno::tkda::flag::contactltId::queid
-//		log.info(" ");
-//		log.info("====== ClassName : ServicePostgre & Method : createContactLtGC ======");
 
 		String values[] = msg.split("::");
 
@@ -349,26 +331,11 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			mainObj.put("data", data);
 			mainObj.put("id", values[1]);
 			mainObj.put("contactListId", values[6]);
-//			log.info("CPID :{}", values[0]);
-//			log.info("CPSQ :{}", values[1]);
-//			log.info("CSKE :{}", values[2]);
-//			log.info("CSNA :{}", "");
-//			log.info("TKDA :{}", values[4]);
-//			log.info("TNO1 :{}", values[3]);
-//			log.info("TNO2 :{}", "");
-//			log.info("TNO3 :{}", "");
-//			log.info("TNO4 :{}", "");
-//			log.info("TNO5 :{}", "");
-//			log.info("TLNO :{}", "");
-//			log.info("QUEUEID :{}", values[7]);
-//			log.info("TRYCNT :{}", "0");
-//			log.info("TMZO :{}", "Asia/Seoul (+09:00)");
 
 		} catch (Exception e) {
 			log.info("Error Message :{}", e.getMessage());
 		}
 
-//		log.info("====== End createContactLtGC ======");
 		return mainObj.toString();
 	}
 
@@ -389,13 +356,15 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	@Override
 	public Entity_CampMa InsertCampMa(Entity_CampMa entityCampMa) {
 
-		Optional<Entity_CampMa> existingEntity = repositoryCampMa.findByCpid(entityCampMa.getCpid());
+		Optional<Entity_CampMa> existingEntity = repositoryCampMa.findByCpid(entityCampMa.getCpid()); // db에 인서트 하기 전. 키
+																										// 값인 캠페인 아이디로
+																										// 먼저 조회를 한다.
 
-		if (existingEntity.isPresent()) {
+		if (existingEntity.isPresent()) {// 조회 해본 결과 레코드가 이미 있는 상황이라면 에러는 발생시킨다.
 			throw new DataIntegrityViolationException("Record with 'cpid' already exists.");
 		}
 
-		return repositoryCampMa.save(entityCampMa);
+		return repositoryCampMa.save(entityCampMa);// 없으면 인서트
 	}
 
 	@Override
@@ -494,10 +463,10 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	}
 
 	@Override
-	public Page<Entity_Ucrm> getAll() {
+	public Page<Entity_Ucrm> getAll() throws Exception {
 		return repositoryUcrm.findAll(PageRequest.of(0, 1000));
 	}
-
+	
 	@Override
 	public Page<Entity_UcrmRt> getAllUcrmRt() throws Exception {
 		return repositoryUcrmRt.findAll(PageRequest.of(0, 1000));
@@ -546,9 +515,9 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	@Override
 	@Transactional
 	public void UpdateCampMa(String cpid, String cpna) {
-		Optional<Entity_CampMa> optionalEntity = repositoryCampMa.findById(cpid);
+		Optional<Entity_CampMa> optionalEntity = repositoryCampMa.findById(cpid);// 캠페인 아이디로 레코드 조회.
 
-		if (optionalEntity.isPresent()) {
+		if (optionalEntity.isPresent()) {// 조회 후 있다면 해당 레코드의 캠페인명 업데이트
 			Entity_CampMa entity = optionalEntity.get();
 			entity.setCpna(cpna);
 			repositoryCampMa.save(entity);

@@ -51,26 +51,26 @@ public class ControllerUCRM {
 		this.customProperties = customProperties;
 	}
 
-	@Scheduled(fixedRate = 60000)
+	@Scheduled(fixedRate = 60000)//1분 간격으로 함수 'SendUcrmRt' 스케줄 돌림.
 	public void scheduledMethod() {
 
 		Mono.fromCallable(() -> SendUcrmRt()).subscribeOn(Schedulers.boundedElastic()).subscribe();
 
 	}
 
-	@Scheduled(fixedRate = 5000)
+	@Scheduled(fixedRate = 5000)//5초 간격으로 함수 'UcrmMsgFrmCnsmer' 스케줄 돌림. 
 	public void UcrmContactlt() {
 		Mono.fromCallable(() -> UcrmMsgFrmCnsmer()).subscribeOn(Schedulers.boundedElastic()).subscribe();
 	}
 
-	@PostMapping("/saveucrmdata")
+	@PostMapping("/saveucrmdata")//이것을 카프카 컨슈머에서 호출하는 api. 컨슈머 앱에서 특정 토픽을 구독하면서 메시지를 받는다. 메시지를 받은 컨슈머는 이 api를 호출하여 받은 메시지를 전달해준다. 
 	public Mono<ResponseEntity<String>> SaveUcrmData(@RequestBody String msg) {
 
 		try {
 
 			log.info(" ");
 			log.info("====== Class : ControllerUCRM - Method : SaveUcrmData ======");
-			Entity_Ucrm enUcrm = serviceDb.createUcrm(msg);
+			Entity_Ucrm enUcrm = serviceDb.createUcrm(msg); //전달 받은 String 형태의 메시지를 쉐도우테이블('UCRMLT')에 인서트 하기 위해서 Entity 형태로 제가공해준다. 
 
 			try {
 				serviceDb.InsertUcrm(enUcrm);
@@ -91,13 +91,14 @@ public class ControllerUCRM {
 		return Mono.just(ResponseEntity.ok("Successfully processed the message."));
 	}
 
-	public Mono<ResponseEntity<String>> UcrmMsgFrmCnsmer() {
+	
+	public Mono<ResponseEntity<String>> UcrmMsgFrmCnsmer() {//이 함수는 스케줄러에 의해 5초마다 실행되면서 쉐도우 테이블('UCRMLT')에 있는 데이터들을 처리해주는 작업을 수행한다. 
 
 		try {
 			log.info(" ");
 			log.info("====== Class : ControllerUCRM - Method : UcrmMsgFrmCnsmer ======");
 
-			Page<Entity_Ucrm> entitylist = serviceDb.getAll();
+			Page<Entity_Ucrm> entitylist = serviceDb.getAll();//바로 위의 함수 'SaveUcrmData'에 의해 테이블에 적재된 데이터들은 최대 1000개씩 불러온다. 
 
 			if (entitylist.isEmpty()) {
 				log.info("All records from DB : Nothing");
@@ -106,13 +107,13 @@ public class ControllerUCRM {
 				log.info("number of records from 'UCRMLT' table : {}", reps);
 				log.info("{}만큼 반복", reps);
 
-				Map<String, String> mapcontactltId = new HashMap<String, String>();
-				Map<String, String> mapquetId = new HashMap<String, String>();
-				Map<String, List<String>> contactlists = new HashMap<String, List<String>>();
+				Map<String, String> mapcontactltId = new HashMap<String, String>();//키 : cpid, 값 : contactLtId
+				Map<String, String> mapquetId = new HashMap<String, String>();//키 : cpid, 값 : queid
+				Map<String, List<String>> contactlists = new HashMap<String, List<String>>();//키 : contactLtId, 값 : 발신대상자 배열
 				Map<String, List<String>> delcontactlists = new HashMap<String, List<String>>();
 				String contactLtId = "";
 
-				for (int i = 0; i < reps; i++) {
+				for (int i = 0; i < reps; i++) {//가져온 레코드 갯수만큼 반복. 
 
 					Entity_ContactLt enContactLt = serviceDb.createContactUcrm(entitylist.getContent().get(i));
 
@@ -121,22 +122,28 @@ public class ControllerUCRM {
 					contactLtId = mapcontactltId.get(cpid);
 					String queid = mapquetId.get(cpid);
 
-					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
-						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
+					if (contactLtId == null || contactLtId.equals("")) {// cpid로 Map(mapcontactltId)을 조회했는데 Map 안에 그것(cpid)에 대응하는 contactltId가 없다면,
+						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);//cpid를 가지고 직접 제네시스 api를 호출해서 contactltId를 알아낸다.
+						if(result.equals("")) {
+							//쉐도우 테이블에서 삭제 테이블명 'UCRMLT'
+							for (int j = 0; j < reps; j++) {
+								serviceDb.DelUcrmLtById(entitylist.getContent().get(j).getTopcDataIsueSno());
+							}
+							return null;
+						}
 						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
 																								// contactlistid,queueid만
-																								// 추출.
+																								// 추출. 변수 'res' 형식의 예 ) contactlistid::queueid
 						contactLtId = res.split("::")[0];
 						queid = res.split("::")[1];
 
 						mapcontactltId.put(cpid, contactLtId);
 						mapquetId.put(cpid, res.split("::")[1]);
-					} else {
-					}
+					} 
 
 					String row_result = ServiceJson.extractStrVal("ExtractRawUcrm", entitylist.getContent().get(i));
-					row_result = row_result + "::" + contactLtId + "::" + queid;
-					String contactltMapper = serviceDb.createContactLtGC(row_result);
+					row_result = row_result + "::" + contactLtId + "::" + queid; 
+					String contactltMapper = serviceDb.createContactLtGC(row_result); // row_result = cpid::cpsq::cske::csno::tkda::flag::contactltId::queid
 
 					if (!contactlists.containsKey(contactLtId)) {
 						contactlists.put(contactLtId, new ArrayList<>());
@@ -145,31 +152,29 @@ public class ControllerUCRM {
 
 					// db인서트
 					try {
-						serviceDb.InsertContactLt(enContactLt);
+						serviceDb.InsertContactLt(enContactLt);//테이블명 'contactlt'
 
-					} catch (DataIntegrityViolationException ex) {
+					} catch (DataIntegrityViolationException ex) {//인서트 하려고 했는데 이미 있는 데이터여서 에러가 발생한 경우
 						log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-						if (enContactLt.getFlag().equals("D")) {
+						if (enContactLt.getFlag().equals("D")) {//만약 인서트 하려고 하는 해당 레코드의 flag 값이 'D'이면 회수하라는 의미 -> 즉 삭제하라는 의미.
 							log.error("flag is 'D', delete record");
 
+							//이 부분은 제네시스로 삭제 api를 호출하기 위해서 필요한 부분.
 							if (!delcontactlists.containsKey(contactLtId)) {
 								delcontactlists.put(contactLtId, new ArrayList<>());
 							}
 							delcontactlists.get(contactLtId).add(row_result.split("::")[1]);
-
-							serviceDb.DelContactltById(enContactLt.getId());// contactlt테이블에서 삭제
+							//이 부분은 제네시스로 삭제 api를 호출하기 위해서 필요한 부분.
+							
+							
+							serviceDb.DelContactltById(enContactLt.getId());// 'contactlt' 테이블에서 삭제
 						}
 					} catch (DataAccessException ex) {
 						log.error("DataAccessException 발생 : {}", ex.getMessage());
 					}
 
-					try {
-					} catch (Exception e) {
-						log.error("Error Message", e.getMessage());
-						e.printStackTrace();
-					}
 
-					// 컨슈머에서 던져줘서 임시로 적재해 두는 UCRM 테이블에서 삭제
+					//쉐도우 테이블에서 삭제 테이블명 'UCRMLT'
 					serviceDb.DelUcrmLtById(entitylist.getContent().get(i).getTopcDataIsueSno());
 
 				}

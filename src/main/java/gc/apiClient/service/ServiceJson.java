@@ -117,7 +117,7 @@ public class ServiceJson  {
 	}
 
 	
-	public static String ExtractCampMaUpdateOrDel(String stringMsg) throws Exception{// IF-CRM_001,IF-CRM_002에서 사용하기 위한 추출함수.
+	public static String ExtractCampMaUpdateOrDel(String stringMsg) throws Exception{
 		// cpid::coid::cpna::divisionid::action
 		String jsonResponse = stringMsg;
 
@@ -163,7 +163,7 @@ public class ServiceJson  {
 
 
 	
-	public static String ExtractRawUcrm(Entity_Ucrm enUcrm) throws Exception {// cpid::cpsq::cske::csno::tkda::flag::contactltId::queid
+	public static String ExtractRawUcrm(Entity_Ucrm enUcrm) throws Exception {// cpid::cpsq::cske::csno::tkda::flag
 
 
 		String cpid = enUcrm.getId().getCpid();

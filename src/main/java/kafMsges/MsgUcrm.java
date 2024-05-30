@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class MsgUcrm implements InterfaceKafMsg {
+public class MsgUcrm implements InterfaceKafMsg { //카프카 프로듀서로 보내기 위한 UCRM 메시지만을 모아둔 클래스
 
 	private InterfaceDBPostgreSQL serviceDb;
 
@@ -37,7 +37,7 @@ public class MsgUcrm implements InterfaceKafMsg {
 	}
 
 	@Override
-	public String maMassage(Entity_CampMa enCampMa, String datachgcd) throws Exception {
+	public String maMassage(Entity_CampMa enCampMa, String datachgcd) throws Exception {//MA 메시지
 
 		log.info(" ");
 		log.info("====== ClassName : MsgUcrm & Method : maMassage ======");
@@ -56,11 +56,11 @@ public class MsgUcrm implements InterfaceKafMsg {
 		case "insert":
 		case "update":
 
-			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));
+			coid = mappingData.getCentercodeById(Integer.toString(enCampMa.getCoid()));//센터코드 맵핑된 거 'id'를 키 값으로 하여 가지고 옴. 
 			coid = coid != null ? coid : "EX";
-			enCampMaJson.setCenterCd(coid);
-			enCampMaJson.setCmpnId(enCampMa.getCpid());
-			enCampMaJson.setCmpnNm(enCampMa.getCpna());
+			enCampMaJson.setCenterCd(coid);//센터코드
+			enCampMaJson.setCmpnId(enCampMa.getCpid());//캠페인아이디
+			enCampMaJson.setCmpnNm(enCampMa.getCpna());//캠페인명
 
 			topcDataIsueDtm = formatter.format(now);
 
@@ -86,14 +86,14 @@ public class MsgUcrm implements InterfaceKafMsg {
 			break;
 		}
 
-		jsonString = objectMapper.writeValueAsString(enCampMaJson);
+		jsonString = objectMapper.writeValueAsString(enCampMaJson);//객체를 String 타입으로 변환. 
 		log.info("jsonString : {}", jsonString);
 		log.info("====== End maMassage ======");
 		return jsonString;
 	}
 
 	@Override
-	public String rtMassage(Entity_CampRt enCampRt) throws Exception {
+	public String rtMassage(Entity_CampRt enCampRt) throws Exception { //RT 메시지, 결과 발신 메시지.
 
 		JSONObject obj = new JSONObject();
 		try {

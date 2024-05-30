@@ -46,7 +46,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @Slf4j
-public class ControllerCenter {
+public class ControllerCenter {                       
 
 	private final InterfaceDBPostgreSQL serviceDb;
 	private final InterfaceWebClient serviceWeb;
@@ -116,10 +116,9 @@ public class ControllerCenter {
 					while (reps-- > 0) {// reps가 0이 될 때까지 reps를 줄여나가면서 반복.
 
 						log.info("{}번째 인덱스 ", reps);
-//						row_result = ExtractValCrm12(result, reps); // 결과 값 : cpid::coid::cpna::division ->
-//																	// 캠페인아이디::테넌트아이디::캠페인명::디비전
 
-						row_result = ServiceJson.extractStrVal("ExtractValCrm12", result, reps);
+						row_result = ServiceJson.extractStrVal("ExtractValCrm12", result, reps);// 결과 값 : cpid::coid::cpna::division ->
+																								// 캠페인아이디::테넌트아이디::캠페인명::디비전
 
 						division = row_result.split("::")[3];
 
@@ -130,14 +129,14 @@ public class ControllerCenter {
 
 						Entity_CampMa enCampMa = serviceDb.CreateEnCampMa(row_result);
 
-						switch (business) {
+						switch (business) {//여기서 비즈니스 로직 구분. default는 'apim'
 						case "UCRM":
 
 							MsgUcrm msgucrm = new MsgUcrm();
-							msg = msgucrm.maMassage(enCampMa, "insert");
+							msg = msgucrm.maMassage(enCampMa, "insert"); //카프카 프로듀서로 보내기 위한 메시지 조립작업.
 
 							try {
-								serviceDb.InsertCampMa(enCampMa);
+								serviceDb.InsertCampMa(enCampMa);//'enCampMa' db에 인서트 
 							} catch (DataIntegrityViolationException ex) {
 								log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
 								continue;
@@ -208,7 +207,7 @@ public class ControllerCenter {
 		return Mono.empty();
 	}
 
-	@PostMapping("/updateOrDelCampma")
+	@PostMapping("/updateOrDelCampma")//이 api는 제네시스 이벤트 브릿지를 통해 update, delete 이벤트 발생 시 불려진다. 
 	public Mono<ResponseEntity<String>> UpdateOrDelCampMa(@RequestBody String msg, HttpServletRequest request)
 			throws Exception {
 
@@ -221,9 +220,9 @@ public class ControllerCenter {
 
 			String ipAddress = request.getRemoteAddr();
 			int port = request.getRemotePort();
-			log.info("Request received from IP address and Port => {}:{}", ipAddress, port);
+			log.info("Request received from IP address and Port => {}:{}", ipAddress, port);//어디서 이 api를 불렀는지 ip와 port 번호를 찍어본다. 
 
-			row_result = ServiceJson.extractStrVal("ExtractCampMaUpdateOrDel", msg);
+			row_result = ServiceJson.extractStrVal("ExtractCampMaUpdateOrDel", msg); // cpid::coid::cpna::divisionid::action 이 String을 결과 값으로 받는다. 
 			String division = row_result.split("::")[3];
 			String action = row_result.split("::")[4];
 
@@ -232,7 +231,7 @@ public class ControllerCenter {
 			String cpna = row_result.split("::")[2];
 
 			Map<String, String> properties = customProperties.getDivision();
-			String divisionName = properties.getOrDefault(division, "couldn't find division");
+			String divisionName = properties.getOrDefault(division, "couldn't find division");//src/main/resources 경로의 application.properties 참조, division 아이디를 키로하여 값 조회.
 
 			Map<String, String> businessLogic = BusinessLogic.SelectedBusiness(divisionName);
 
@@ -253,20 +252,19 @@ public class ControllerCenter {
 
 					try {
 
-						serviceDb.UpdateCampMa(cpid, cpna);
+						serviceDb.UpdateCampMa(cpid, cpna);//캠페인 아이디를 기준으로 해당 레코드의 캠페인명 업데이트
 
 						log.info("jsonString : {}", msg);
 						MessageToProducer producer = new MessageToProducer();
 						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, msg);
+						producer.sendMsgToProducer(endpoint, msg); //그리고 카프카로 메시지를 보낸다. 
 
-					} catch (EntityNotFoundException ex) {
+					} catch (EntityNotFoundException ex) {//조회가 되지 않았을 경우
 
 						log.error("EntityNotFoundException occurred: {} ", ex.getMessage());
-						enCampMa = serviceDb.CreateEnCampMa(row_result);
-						serviceDb.InsertCampMa(enCampMa);
+						serviceDb.InsertCampMa(enCampMa);//인서트 해버린다. 
 
-						msg = msgucrm.maMassage(enCampMa, "insert");
+						msg = msgucrm.maMassage(enCampMa, "insert");//이후 인서트 형식으로 메시지 보냄
 						
 						log.info("jsonString : {}", msg);
 						MessageToProducer producer = new MessageToProducer();
@@ -280,7 +278,7 @@ public class ControllerCenter {
 					return Mono.just(ResponseEntity.ok()
 							.body(String.format("UCRM, A record with cpid : %s has been updated successfully", cpid)));
 
-				} else {
+				} else {//update가 아닌 delete일 때 
 					log.info("Cpid of target record for deleting : {}", cpid);
 					serviceDb.DelCampMaById(cpid);
 					return Mono.just(ResponseEntity.ok()
@@ -389,7 +387,7 @@ public class ControllerCenter {
 		}
 	}
 
-	@PostMapping("/SaveRtData")
+	@PostMapping("/SaveRtData")//제네시스의 이벤트를 통해 이 api가 불려짐. 
 	public Mono<ResponseEntity<String>> SaveRtData(@RequestBody String msg) {
 
 		log.info(" ");
@@ -397,7 +395,7 @@ public class ControllerCenter {
 
 		try {
 
-			String result = ServiceJson.extractStrVal("ExtrSaveRtData", msg);
+			String result = ServiceJson.extractStrVal("ExtrSaveRtData", msg);//cpid::cpsq::divisionid 리턴 값으로 이 String 받음.  
 			String division = result.split("::")[2];
 
 			Map<String, String> properties = customProperties.getDivision();
@@ -442,13 +440,12 @@ public class ControllerCenter {
 			log.info(" ");
 			log.info("====== Class : ControllerCenter - Method : SendApimRt ======");
 
-			Page<Entity_ApimRt> entitylist = serviceDb.getAllApimRt();
+			Page<Entity_ApimRt> entitylist = serviceDb.getAllApimRt();//apim 발신 결과와 관련된 테이블의 레코드들을 최대 1000개까지 가지고 온다. 
 
 			if (entitylist.isEmpty()) {
 				log.info("All records from DB : Nothing");
 			} else {
-				log.info("All records from DB : {}", entitylist.toString());
-				int reps = entitylist.getNumberOfElements();
+				int reps = entitylist.getNumberOfElements();//몇개의 레코드를 가지고 왔는지.
 				log.info("number of records from 'CAMPRT_UCUBE_W' table: {}", reps);
 				log.info("{}만큼 반복", reps);
 
@@ -464,15 +461,15 @@ public class ControllerCenter {
 					Entity_ApimRt enApimRt = entitylist.getContent().get(i);
 
 					cpid = enApimRt.getId().getCpid(); // 첫번째 레코드부터 cpid를 가지고 온다.
-					String cqsq = enApimRt.getId().getCpsq(); // 첫번째 레코드부터 cpid를 가지고 온다.
+					String cpsq = enApimRt.getId().getCpsq(); // 첫번째 레코드부터 cpsq를 가지고 온다.
 
 					contactLtId = mapcontactltId.get(cpid) != null ? mapcontactltId.get(cpid) : "";
 					divisionName = mapdivision.get(contactLtId) != null ? mapdivision.get(contactLtId) : "";
 
-					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
+					if (contactLtId == null || contactLtId.equals("")) {// cpid로 매치가 되는 contactltId가 있는지 조회 했는데 그것에 대응하는 contactltId가 없다면,
 						log.info("Nomatch contactId");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
-						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
+						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); 	// 가져온 결과에서
 																								// contactlistid,queueid만
 																								// 추출.
 						contactLtId = res.split("::")[0];
@@ -481,16 +478,16 @@ public class ControllerCenter {
 						Map<String, String> properties = customProperties.getDivision();
 						divisionName = properties.getOrDefault(division, "couldn't find division");
 
-						mapcontactltId.put(cpid, contactLtId);
+						mapcontactltId.put(cpid, contactLtId); 
 						mapdivision.put(contactLtId, divisionName);
 					} else {
 						log.info("Matched contactId");
 					}
 
-					if (!contactlists.containsKey(contactLtId)) {
-						contactlists.put(contactLtId, new ArrayList<>());
+					if (!contactlists.containsKey(contactLtId)) {//맵(contactlists)에 키값(contactLtId)이 없다면. 
+						contactlists.put(contactLtId, new ArrayList<>());//'contactLtId'로 된 키 값 추가. 
 					}
-					contactlists.get(contactLtId).add(cqsq);
+					contactlists.get(contactLtId).add(cpsq);//'contactLtId'키의 배열에 고객번호(cpsq) 넣음. 
 					serviceDb.DelApimRtById(enApimRt.getId());
 
 					log.info("Add value into Arraylist named '{}'", contactLtId);
@@ -499,13 +496,13 @@ public class ControllerCenter {
 
 						divisionName = mapdivision.get(entry.getKey());
 
-						if (entry.getValue().size() >= 50) {
-							Roop(entry.getKey(), entry.getValue(), divisionName);
+						if (entry.getValue().size() >= 50) {//배열 크기가 50이상일 때, 배열 안의 인수 개수가 50개 이상일 때는 일단 발신 결과 전송 로직을 탄다. 50개 이상 쌓이고 하게 되면 에러남. 
+							Roop(entry.getKey(), entry.getValue(), divisionName);//contactLtId 와 contactLtId에 해당하는 배열, divisionName
 						}
 					}
 				}
 
-				for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
+				for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {//배열 안의 크기가 50개 이상이 아닐 때, 즉 50개 이상 전송하고 남은 나머지들 전송. 
 
 					divisionName = mapdivision.get(entry.getKey());
 					Roop(entry.getKey(), entry.getValue(), divisionName);
