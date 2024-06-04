@@ -1,0 +1,5 @@
+# Created at 2024-06-04T15:03:08.064
+Boot Manifest-JAR contains absolute paths in classpath 'D:\LG_Project\GcAPIGateway\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
