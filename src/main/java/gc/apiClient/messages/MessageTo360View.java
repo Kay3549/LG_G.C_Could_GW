@@ -38,14 +38,14 @@ public class MessageTo360View {
 
 		Mono<String> result = webClient.post().uri(endpointUrl).body(BodyInserters.fromValue(jsonString)).retrieve()
 				.bodyToMono(String.class).doOnError(error -> {
-					log.error("Error making API request: {}", error.getMessage());
+					log.error("API로 요청을 보내는 과정에서 에러가 발생했습니다. : {}", error.getMessage());
 					error.printStackTrace();
 				}).doOnSuccess(responseBody -> {
-					log.info("Response received: {}", responseBody);
+					log.info("카프카 프로듀서로 부터 받은 응답 메시지 : {}", responseBody);
 				}).doOnError(error -> {
 					log.error("Error in handling response: {}", error.getMessage());
 				}).doFinally(signal -> {
-					log.info("Request completed successfully.");
+					log.info("요청이 성공적으로 완료되었습니다.");
 				});
 
 		// Subscribe to the Mono

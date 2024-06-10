@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface InterfaceWebClient {
 
-	String GetApiRequet(String endpoint)throws Exception;
+	String GetApiRequet(String endpoint, int pagenumber)throws Exception;
 	Void PostContactLtClearReq(String endpoint,String contactListId)throws Exception;
 	String GetStatusApiRequet(String endpoint, String campaignId) throws Exception;
 	String GetCampaignsApiRequet(String endpoint, String campaignId);

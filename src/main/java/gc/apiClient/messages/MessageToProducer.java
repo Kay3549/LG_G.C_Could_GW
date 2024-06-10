@@ -13,7 +13,7 @@ public class MessageToProducer {
 		
 		log.info(" ");
 		log.info("====== ClassName : MessageToProducer & Method : sendMsgToProducer ======");
-		log.info("Producer로 보낼 EndPoint & Msg : '{}' / {}",towhere,jsonString);
+		log.info("Producer로 보낼 EndPoint & 메시지 : '{}' / {}",towhere,jsonString);
 		
 		WebClient webClient = WebClient.builder().baseUrl("http://localhost:8081").build();
 
@@ -25,15 +25,15 @@ public class MessageToProducer {
 	            .retrieve()
 	            .bodyToMono(String.class)
 	            .doOnError(error -> {
-	                log.error("Error making API request: {}", error.getMessage());
+	                log.error("API로 요청을 보내는 과정에서 에러가 발생했습니다. : {}", error.getMessage());
 	                error.printStackTrace();
 	            })
 	            .subscribe(responseBody -> {
-	                log.info("Response received : {}", responseBody);
+	                log.info("카프카 프로듀서로 부터 받은 응답 메시지 : {}", responseBody);
 	            }, error -> {
 	                log.error("Error in handling response: {}", error.getMessage());
 	            }, () -> {
-	                log.info("Request completed successfully.");
+	                log.info("요청이 성공적으로 완료되었습니다.");
 	            });
 	    
 		log.info("====== End sendMsgToProducer ======");

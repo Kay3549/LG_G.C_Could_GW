@@ -89,14 +89,17 @@ public class ServiceJson  {
 		String result = "";
 
 			jsonNode = objectMapper.readTree(jsonResponse);
-			result = jsonNode.path("entities").path(i).path("id").asText();
+			String cpid = jsonNode.path("entities").path(i).path("id").asText();
 			String coid = jsonNode.path("entities").path(i).path("callerName").asText();
 			String cpnm = jsonNode.path("entities").path(i).path("name").asText();
-			result = result + "::" + coid;
-			result = result + "::" + cpnm;
-			result = result + "::" + jsonNode.path("entities").path(i).path("division").path("name").asText();
+			String divisionName = jsonNode.path("entities").path(i).path("division").path("name").asText();
 
+		result = cpid+"::"+coid+"::"+cpnm+"::"+divisionName;
 		log.info("result : {}", result);
+		log.info("cpid(캠페인아이디) : {}", cpid);
+		log.info("coid(센터구분코드) : {}", coid);
+		log.info("cpnm(캠페인명) : {}", cpnm);
+		log.info("divisionName(디비전명) : {}", divisionName);
 		log.info("====== END ExtractValCrm12 ======");
 		return result;
 	}
@@ -111,11 +114,11 @@ public class ServiceJson  {
 			jsonNode = objectMapper.readTree(jsonResponse);
 			result = Integer.parseInt(jsonNode.path("total").asText()); //매개 변수로 받은 'stringMsg'에 "total"이라는 키가 있음. 그 키 값의 의미는 조회된 캠페인의 숫자.
 
-		log.info("캠페인 리스트 사이즈 : {}", result);
+		log.info("총 캠페인 개수 : {}", result);
 		log.info("====== END CampaignListSize ======");
 		return result;
 	}
-
+	
 	
 	public static String ExtractCampMaUpdateOrDel(String stringMsg) throws Exception{
 		// cpid::coid::cpna::divisionid::action
@@ -136,6 +139,11 @@ public class ServiceJson  {
 
 
 		log.info("result : {}", result);
+		log.info("cpid(캠페인아이디) : {}", result);
+		log.info("coid(센터구분코드) : {}", result);
+		log.info("cpnm(캠페인명) : {}", result);
+		log.info("division(디비전아이디) : {}", result);
+		log.info("action(crud타입) : {}", result);
 		log.info("====== END ExtractCampMaUpdateOrDel ======");
 		return result;
 	}
@@ -252,11 +260,15 @@ public class ServiceJson  {
 		String result = "";
 
 		jsonNode = objectMapper.readTree(jsonResponse);
-		result = jsonNode.path("cpid").asText();
-		result += "::" + jsonNode.path("cpsq").asText();
-		result += "::" + jsonNode.path("divisionid").asText();
+		String cpid = jsonNode.path("cpid").asText();
+		String cpsq = jsonNode.path("cpsq").asText();
+		String divisionid = jsonNode.path("divisionid").asText();
 
+		result = cpid+"::"+cpsq+"::"+divisionid;
 		log.info("result : {}", result);
+		log.info("cpid(캠페인아이디) : {}", cpid);
+		log.info("cpsq(캠페인시퀀스) : {}", cpsq);
+		log.info("divisionid(디비전아이디) : {}", divisionid);
 
 		log.info("====== End ExtrSaveRtData ======");
 		return result;

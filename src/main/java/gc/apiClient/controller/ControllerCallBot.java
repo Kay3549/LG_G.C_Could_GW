@@ -82,7 +82,7 @@ public class ControllerCallBot {
 		}
 
 		int cntofmsg = casenum;
-		log.info("case count : {}", cntofmsg);
+		log.info("컨슈머로 부터 받은 발신 대상자 건수 : {}", cntofmsg);
 
 		String row_result = "";
 		String result = "";
@@ -112,6 +112,7 @@ public class ControllerCallBot {
 //																					// 후 결과 가져온다.
 				res = ServiceJson.extractStrVal("ExtractContactLtId", result);
 				contactLtId = res.split("::")[0];
+				log.info("컨텍리스트 아이디 : {}", contactLtId);
 
 				for (int i = 0; i < cntofmsg; i++) {
 
@@ -144,14 +145,14 @@ public class ControllerCallBot {
 
 			} catch (Exception e) {
 				e.printStackTrace();
-				log.error("Error Message : {}", e.getMessage());
-				return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : %s", e.getMessage())));
+				log.error("에러 메시지 : {}", e.getMessage());
+				return Mono.just(ResponseEntity.ok().body(String.format("에러가 발생했습니다 : %s", e.getMessage())));
 			}
 
 		default:
 
 			log.info("====== End CallbotMsgFrmCnsumer ======");
-			return Mono.just(ResponseEntity.badRequest().body("Invalid topic_id provided."));
+			return Mono.just(ResponseEntity.badRequest().body("유효하지 않은 topic_id"));
 		}
 	}
 
@@ -165,11 +166,11 @@ public class ControllerCallBot {
 			Page<Entity_CallbotRt> entitylist = serviceDb.getAllCallBotRt();
 
 			if (entitylist.isEmpty()) {
-				log.info("All records from DB : Nothing");
+				log.info("DB에서 조회 된 모든 레코드 : 없음");
 			} else {
-				log.info("All records from DB : {}", entitylist.toString());
+				log.info("DB에서 조회 된 모든 레코드 : {}", entitylist.toString());
 				int reps = entitylist.getNumberOfElements();
-				log.info("number of records from 'CAMPRT_CALLBOT_W' table: {}", reps);
+				log.info("'CAMPRT_CALLBOT_W' table에서 조회 된 레코드 개수 : {}", reps);
 				log.info("{}만큼 반복", reps);
 
 				Map<String, String> mapcontactltId = new HashMap<String, String>();
@@ -190,7 +191,7 @@ public class ControllerCallBot {
 					divisionName = mapdivision.get(contactLtId) != null ? mapdivision.get(contactLtId) : "";
 
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
-						log.info("Nomatch contactId");
+						log.info("일치하는 contactLtId 없음");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
 						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
 																								// contactlistid,queueid만
@@ -199,12 +200,12 @@ public class ControllerCallBot {
 
 						String division = enCallbotRt.getDivisionid();
 						Map<String, String> properties = customProperties.getDivision();
-						divisionName = properties.getOrDefault(division, "couldn't find division");
+						divisionName = properties.getOrDefault(division, "디비전을 찾을 수 없습니다.");
 
 						mapcontactltId.put(cpid, contactLtId);
 						mapdivision.put(contactLtId, divisionName);
 					} else {
-						log.info("Matched contactId");
+						log.info("일치하는 contactId 있음");
 					}
 
 					if (!contactlists.containsKey(contactLtId)) {
@@ -213,7 +214,7 @@ public class ControllerCallBot {
 					contactlists.get(contactLtId).add(cqsq);
 					serviceDb.DelCallBotRtById(enCallbotRt.getId());
 
-					log.info("Add value into contactListId named '{}'", contactLtId);
+					log.info("아이디가 '{}'인 contactListId에 값 추가", contactLtId);
 
 					for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
 
@@ -236,7 +237,7 @@ public class ControllerCallBot {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			log.error("Error Message : {}", e.getMessage());
+			log.error("에러 메시지 : {}", e.getMessage());
 		}
 
 		log.info("====== End SendCallBotRt ======");
@@ -248,7 +249,7 @@ public class ControllerCallBot {
 		String result = serviceWeb.PostContactLtApiBulk("contactList", contactLtId, values);
 
 		if (result.equals("[]")) {
-			log.info("No result, skip to next");
+			log.info("결과 없음, 다음으로 건너 뜀.");
 			values.clear();
 			return Mono.empty();
 		}
@@ -270,7 +271,7 @@ public class ControllerCallBot {
 
 			contactsresult = ServiceJson.extractStrVal("ExtractContacts56", result, i);
 			if (contactsresult.equals("")) {
-				log.info("No value, skip to next");
+				log.info("결과 없음, 다음으로 건너 뜀.");
 				continue;
 			}
 

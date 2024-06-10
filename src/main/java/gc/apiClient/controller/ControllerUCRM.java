@@ -74,7 +74,7 @@ public class ControllerUCRM {
 
 			try {
 				serviceDb.InsertUcrm(enUcrm);
-				log.info("Saved Message : {}", msg);
+				log.info("저장된 메시지 : {}", msg);
 			} catch (DataIntegrityViolationException ex) {
 				log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
 			} catch (DataAccessException ex) {
@@ -83,7 +83,7 @@ public class ControllerUCRM {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			log.error("Error Message : {}", e.getMessage());
+			log.error("에러 메시지 : {}", e.getMessage());
 			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : %s", e.getMessage())));
 		}
 
@@ -101,10 +101,11 @@ public class ControllerUCRM {
 			Page<Entity_Ucrm> entitylist = serviceDb.getAll();//바로 위의 함수 'SaveUcrmData'에 의해 테이블에 적재된 데이터들은 최대 1000개씩 불러온다. 
 
 			if (entitylist.isEmpty()) {
-				log.info("All records from DB : Nothing");
+				log.info("DB에서 조회 된 모든 레코드 : 없음");
 			} else {
 				int reps = entitylist.getNumberOfElements();
 				log.info("number of records from 'UCRMLT' table : {}", reps);
+				log.info("'UCRMLT'테블에서 조회된 레코드 개수 : {}", reps);
 				log.info("{}만큼 반복", reps);
 
 				Map<String, String> mapcontactltId = new HashMap<String, String>();//키 : cpid, 값 : contactLtId
@@ -157,7 +158,7 @@ public class ControllerUCRM {
 					} catch (DataIntegrityViolationException ex) {//인서트 하려고 했는데 이미 있는 데이터여서 에러가 발생한 경우
 						log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
 						if (enContactLt.getFlag().equals("D")) {//만약 인서트 하려고 하는 해당 레코드의 flag 값이 'D'이면 회수하라는 의미 -> 즉 삭제하라는 의미.
-							log.error("flag is 'D', delete record");
+							log.error("flag가 'D', 레코드 삭제");
 
 							//이 부분은 제네시스로 삭제 api를 호출하기 위해서 필요한 부분.
 							if (!delcontactlists.containsKey(contactLtId)) {
@@ -187,7 +188,7 @@ public class ControllerUCRM {
 
 				for (Map.Entry<String, List<String>> entry : delcontactlists.entrySet()) {
 
-					log.info("Now the size of Arraylist '{}': {}", entry.getKey(), entry.getValue().size());
+					log.info("Arraylist '{}'의 현재 사이즈: {}", entry.getKey(), entry.getValue().size());
 					serviceWeb.DelContacts("delcontacts", entry.getKey(), entry.getValue());
 				}
 
@@ -195,7 +196,7 @@ public class ControllerUCRM {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			log.error("Error Message : {}", e.getMessage());
+			log.error("에러 메시지 : {}", e.getMessage());
 		}
 
 		return Mono.just(ResponseEntity.ok("Successfully processed the message."));
@@ -211,11 +212,11 @@ public class ControllerUCRM {
 			Page<Entity_UcrmRt> entitylist = serviceDb.getAllUcrmRt();
 
 			if (entitylist.isEmpty()) {
-				log.info("All records from DB : Nothing");
+				log.info("DB에서 조회 된 모든 레코드 : 없음");
 			} else {
-				log.info("All records from DB : {}", entitylist.toString());
+				log.info("DB에서 조회 된 모든 레코드 : {}", entitylist.toString());
 				int reps = entitylist.getNumberOfElements();
-				log.info("number of records from 'CAMPRT_UCRM_W' table: {}", reps);
+				log.info("'CAMPRT_UCRM_W'' table에서 조회 된 레코드 개수 : {}", reps);
 				log.info("{}만큼 반복", reps);
 
 				Map<String, String> mapcontactltId = new HashMap<String, String>();
@@ -236,7 +237,7 @@ public class ControllerUCRM {
 					divisionName = mapdivision.get(contactLtId) != null ? mapdivision.get(contactLtId) : "";
 
 					if (contactLtId == null || contactLtId.equals("")) {// cpid를 조회 했는데 그것에 대응하는 contactltId가 없다면,
-						log.info("Nomatch contactId");
+						log.info("일치하는 contactLtId 없음");
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);
 						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
 																								// contactlistid,queueid만
@@ -245,12 +246,12 @@ public class ControllerUCRM {
 
 						String division = enUcrmRt.getDivisionid(); // 첫번째 레코드부터 cpid를 가지고 온다.
 						Map<String, String> properties = customProperties.getDivision();
-						divisionName = properties.getOrDefault(division, "couldn't find division");
+						divisionName = properties.getOrDefault(division, "디비전을 찾을 수 없습니다.");
 
 						mapcontactltId.put(cpid, contactLtId);
 						mapdivision.put(contactLtId, divisionName);
 					} else {
-						log.info("Matched contactId");
+						log.info("일치하는 contactLtId 있음");
 					}
 
 					if (!contactlists.containsKey(contactLtId)) {
@@ -259,7 +260,7 @@ public class ControllerUCRM {
 					contactlists.get(contactLtId).add(cqsq);
 					serviceDb.DelUcrmRtById(enUcrmRt.getId());
 
-					log.info("Add value into Arraylist named '{}'", contactLtId);
+					log.info("해당 키 값이 '{}'인 Arraylist에 값 추가", contactLtId);
 
 					for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
 
@@ -282,7 +283,7 @@ public class ControllerUCRM {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			log.error("Error Message : {}", e.getMessage());
+			log.error("에러 메시지 : {}", e.getMessage());
 		}
 
 		log.info("====== End SendUcrmRt ======");
@@ -294,7 +295,7 @@ public class ControllerUCRM {
 		String result = serviceWeb.PostContactLtApiBulk("contactList", contactLtId, values);
 
 		if (result.equals("[]")) {
-			log.info("No result, skip to next");
+			log.info("결과 없음, 다음으로 건너 뜀.");
 			values.clear();
 			return Mono.empty();
 		}
@@ -317,7 +318,7 @@ public class ControllerUCRM {
 
 			contactsresult = ServiceJson.extractStrVal("ExtractContacts56", result, i);
 			if (contactsresult.equals("")) {
-				log.info("No value, skip to next");
+				log.info("결과 없음, 다음으로 건너 뜀.");
 				continue;
 			}
 
@@ -330,7 +331,7 @@ public class ControllerUCRM {
 
 			if (dirt == 1) {// URM이면서 정상일 때.
 
-				log.info("UCRM : dirt(responsed code) is '1'. skip sending message to kafka ");
+				log.info("UCRM : dirt(응답코드)가 '1'이므로 카프카로 결과 발신메시지를 보내지 않습니다.");
 
 			} else {
 

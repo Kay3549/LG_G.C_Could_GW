@@ -16,7 +16,7 @@ public class ServiceWebClient implements InterfaceWebClient {
     private static final long RETRY_INTERVAL_MS = 1000; // 1 second (adjust as needed)
 
 	@Override
-	public String GetApiRequet(String endpoint) {
+	public String GetApiRequet(String endpoint,int pagenumber) {
 
 		log.info(" ");
 		log.info("====== ClassName : ServiceWebClient & Method : GetApiRequet ======");
@@ -24,7 +24,7 @@ public class ServiceWebClient implements InterfaceWebClient {
 		String result = "";
 
 		WebClientApp webClient = new WebClientApp();
-		result = webClient.makeApiRequest(endpoint, "GET", "sortBy", "dateCreated", "sortOrder", "descending");
+		result = webClient.makeApiRequest(endpoint, "GET", "sortBy", "dateCreated", "sortOrder", "descending", "pageSize",100, "pageNumber", pagenumber);
 
 		log.info("====== End GetApiRequet ======");
 		return result;
@@ -125,10 +125,10 @@ public class ServiceWebClient implements InterfaceWebClient {
 		}
 
 		if (result != null) {
-			result = "Succeded";
+			result = "성공";
 		}
 
-		log.info("PostContactLtApiRequet 요청 후 결과 값 : {}, 시도횟수 : {}", result, retryCount);
+		log.info("PostContactLtApiRequet 요청 후 결과 값 : {}, 시도횟수 : {} || 컨텍리스트 아이디 : {}", result, retryCount,contactListId);
 		log.info("====== End PostContactLtApiRequet ======");
 		return result;
 	}

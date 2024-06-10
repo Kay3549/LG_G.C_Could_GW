@@ -200,7 +200,13 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		String divisionId = "";
 
 		cpid = parts[0];// 캠페인 아이디
-		coid = Integer.parseInt(parts[1]); // 센터구분 코드
+		try {
+			coid = Integer.parseInt(parts[1]); // 센터구분 코드
+		} catch (Exception e) {
+			log.info("잘못된 coid(센터구분 코드)입니다 coid(센터구분 코드)는 두 자리 숫자여야 합니다 : {}", parts[1]);
+			coid=99;
+			log.info("coid(센터구분 코드)임의로 숫자 '99'로 변경 : {}", coid);
+		}
 		cpna = parts[2]; // 캠페인 명
 		divisionId = parts[3]; // 캠페인 명
 
@@ -346,7 +352,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		Optional<Entity_CampRt> existingEntity = repositoryCampRt.findById(entity_CampRt.getId());
 
 		if (existingEntity.isPresent()) {
-			throw new DataIntegrityViolationException("Record with the given composite key already exists.");
+			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
 
 		return repositoryCampRt.save(entity_CampRt);
@@ -361,7 +367,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 																										// 먼저 조회를 한다.
 
 		if (existingEntity.isPresent()) {// 조회 해본 결과 레코드가 이미 있는 상황이라면 에러는 발생시킨다.
-			throw new DataIntegrityViolationException("Record with 'cpid' already exists.");
+			throw new DataIntegrityViolationException("주어진 'cpid'를 가진 레코드가 테이블에 이미 존재합니다.");
 		}
 
 		return repositoryCampMa.save(entityCampMa);// 없으면 인서트
@@ -373,7 +379,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		Optional<Entity_Ucrm> existingEntity = repositoryUcrm.findById(entityUcrm.getId());
 
 		if (existingEntity.isPresent()) {
-			throw new DataIntegrityViolationException("Record with the given composite key already exists.");
+			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
 
 		return repositoryUcrm.save(entityUcrm);
@@ -385,7 +391,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		Optional<Entity_ContactLt> existingEntity = repositoryContactLt.findById(entityContactLt.getId());
 
 		if (existingEntity.isPresent()) {
-			throw new DataIntegrityViolationException("Record with the given composite key already exists.");
+			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
 
 		return repositoryContactLt.save(entityContactLt);
@@ -532,7 +538,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		Optional<Entity_CallbotRt> existingEntity = repositoryCallbotRt.findById(enCallbotRt.getId());
 
 		if (existingEntity.isPresent()) {
-			throw new DataIntegrityViolationException("Record with the given composite key already exists.");
+			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
 
 		return repositoryCallbotRt.save(enCallbotRt);
@@ -543,7 +549,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		Optional<Entity_UcrmRt> existingEntity = repositoryUcrmRt.findById(enUcrmRt.getId());
 
 		if (existingEntity.isPresent()) {
-			throw new DataIntegrityViolationException("Record with the given composite key already exists.");
+			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
 
 		return repositoryUcrmRt.save(enUcrmRt);
@@ -554,7 +560,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		Optional<Entity_ApimRt> existingEntity = repositoryApimRt.findById(enApimRt.getId());
 
 		if (existingEntity.isPresent()) {
-			throw new DataIntegrityViolationException("Record with the given composite key already exists.");
+			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
 
 		return repositoryApimRt.save(enApimRt);
