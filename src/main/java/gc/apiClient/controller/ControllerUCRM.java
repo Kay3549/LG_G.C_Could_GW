@@ -331,7 +331,7 @@ public class ControllerUCRM {
 
 			if (dirt == 1) {// URM이면서 정상일 때.
 
-				log.info("UCRM : dirt(응답코드)가 '1'이므로 카프카로 결과 발신메시지를 보내지 않습니다.");
+				log.info("UCRM : dirt(응답코드)가 '1'이므로 카프카로 발신결과 메시지를 보내지 않습니다.");
 
 			} else {
 

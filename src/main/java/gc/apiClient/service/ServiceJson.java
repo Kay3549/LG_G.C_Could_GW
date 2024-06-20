@@ -129,21 +129,20 @@ public class ServiceJson  {
 		String result = "";
 
 			jsonNode = objectMapper.readTree(jsonResponse);
-			result = jsonNode.path("cpid").asText();
+			String cpid = jsonNode.path("cpid").asText();
 			String coid = jsonNode.path("callerName").asText();
 			String cpnm = jsonNode.path("cpnm").asText();
-			result = result + "::" + coid;
-			result = result + "::" + cpnm;
-			result = result + "::" + jsonNode.path("division").asText();
-			result = result + "::" + jsonNode.path("action").asText();
+			String division = jsonNode.path("division").asText();
+			String action = jsonNode.path("action").asText();
 
-
+		result = cpid+"::"+coid+"::"+cpnm+"::"+division+"::"+action;
+		
 		log.info("result : {}", result);
-		log.info("cpid(캠페인아이디) : {}", result);
-		log.info("coid(센터구분코드) : {}", result);
-		log.info("cpnm(캠페인명) : {}", result);
-		log.info("division(디비전아이디) : {}", result);
-		log.info("action(crud타입) : {}", result);
+		log.info("cpid(캠페인아이디) : {}", cpid);
+		log.info("coid(센터구분코드) : {}", coid);
+		log.info("cpnm(캠페인명) : {}", cpnm);
+		log.info("division(디비전아이디) : {}", division);
+		log.info("action(crud타입) : {}", action);
 		log.info("====== END ExtractCampMaUpdateOrDel ======");
 		return result;
 	}

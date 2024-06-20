@@ -178,7 +178,7 @@ public class ControllerCenter {
 					msg = msgucrm.maMassage(enCampMa, action);
 
 					log.info("업데이트를 위한 변경할 대상 cpid : {}", cpid);
-					log.info("새로운 캠페인 아이디 : {}", cpna);
+					log.info("새로운 캠페인명 : {}", cpna);
 
 					try {
 
@@ -192,17 +192,17 @@ public class ControllerCenter {
 					} catch (EntityNotFoundException ex) {//조회가 되지 않았을 경우
 
 						log.error("EntityNotFoundException occurred: {} ", ex.getMessage());
-						serviceDb.InsertCampMa(enCampMa);//인서트 해버린다. 
-
-						msg = msgucrm.maMassage(enCampMa, "insert");//이후 인서트 형식으로 메시지 보냄
-						
-						log.info("jsonString : {}", msg);
-						MessageToProducer producer = new MessageToProducer();
-						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, msg);
-
-						return Mono.just(ResponseEntity.ok(
-								"There is no record which matched with request cpid. so it just has been inserted."));
+//						serviceDb.InsertCampMa(enCampMa);//인서트 해버린다. 
+//
+//						msg = msgucrm.maMassage(enCampMa, "insert");//이후 인서트 형식으로 메시지 보냄
+//						
+//						log.info("jsonString : {}", msg);
+//						MessageToProducer producer = new MessageToProducer();
+//						endpoint = "/gcapi/post/" + topic_id;
+//						producer.sendMsgToProducer(endpoint, msg);
+//
+//						return Mono.just(ResponseEntity.ok(
+//								"There is no record which matched with request cpid. so it just has been inserted."));
 					}
 
 					return Mono.just(ResponseEntity.ok()
@@ -226,7 +226,7 @@ public class ControllerCenter {
 				if (action.equals("update")) {
 
 					log.info("업데이트를 위한 변경할 대상 cpid : {}", cpid);
-					log.info("새로운 캠페인 아이디 : {}", cpna);
+					log.info("새로운 캠페인명 : {}", cpna);
 
 					try {
 
@@ -239,18 +239,18 @@ public class ControllerCenter {
 					} catch (EntityNotFoundException ex) {
 
 						log.error("EntityNotFoundException occurred: {} ", ex.getMessage());
-						enCampMa = serviceDb.CreateEnCampMa(row_result);
-						serviceDb.InsertCampMa(enCampMa);
-
-						msg = msgcallbot.maMassage(enCampMa, "insert");
-
-						log.info("jsonString : {}", msg);
-						MessageToProducer producer = new MessageToProducer();
-						endpoint = "/gcapi/post/" + topic_id;
-						producer.sendMsgToProducer(endpoint, msg);
-
-						return Mono.just(ResponseEntity.ok(
-								"There is no record which matched with request cpid. so it just has been inserted."));
+//						enCampMa = serviceDb.CreateEnCampMa(row_result);
+//						serviceDb.InsertCampMa(enCampMa);
+//
+//						msg = msgcallbot.maMassage(enCampMa, "insert");
+//
+//						log.info("jsonString : {}", msg);
+//						MessageToProducer producer = new MessageToProducer();
+//						endpoint = "/gcapi/post/" + topic_id;
+//						producer.sendMsgToProducer(endpoint, msg);
+//
+//						return Mono.just(ResponseEntity.ok(
+//								"There is no record which matched with request cpid. so it just has been inserted."));
 					}
 
 					return Mono.just(ResponseEntity.ok().body(
@@ -274,7 +274,7 @@ public class ControllerCenter {
 				if (action.equals("update")) {
 
 					log.info("업데이트를 위한 변경할 대상 cpid : {}", cpid);
-					log.info("새로운 캠페인 아이디 : {}", cpna);
+					log.info("새로운 캠페인명 : {}", cpna);
 
 					try {
 
@@ -286,18 +286,18 @@ public class ControllerCenter {
 					} catch (EntityNotFoundException ex) {
 
 						log.error("EntityNotFoundException occurred: {} ", ex.getMessage());
-						enCampMa = serviceDb.CreateEnCampMa(row_result);
-						serviceDb.InsertCampMa(enCampMa);
-
-						msg = msgapim.maMassage(enCampMa, "insert");
-						log.info("jsonString : {}", msg);
-						// localhost:8084/dspRslt
-						// 192.168.219.134:8084/dspRslt
-						apim = new MessageToApim();
-						endpoint = "/cmpnMstrRegist";
-						apim.sendMsgToApim(endpoint, msg);
-
-						return Mono.just(ResponseEntity.ok("요청받은 cpid로 DB를 조회할 결과 조회된 레코드가 없습니다. 그러므로 DB에 인서트 합니다."));
+//						enCampMa = serviceDb.CreateEnCampMa(row_result);
+//						serviceDb.InsertCampMa(enCampMa);
+//
+//						msg = msgapim.maMassage(enCampMa, "insert");
+//						log.info("jsonString : {}", msg);
+//						// localhost:8084/dspRslt
+//						// 192.168.219.134:8084/dspRslt
+//						apim = new MessageToApim();
+//						endpoint = "/cmpnMstrRegist";
+//						apim.sendMsgToApim(endpoint, msg);
+//
+//						return Mono.just(ResponseEntity.ok("요청받은 cpid로 DB를 조회할 결과 조회된 레코드가 없습니다. 그러므로 DB에 인서트 합니다."));
 					}
 
 					return Mono.just(ResponseEntity.ok()
@@ -521,14 +521,11 @@ public class ControllerCenter {
 	public void d(@PathVariable("topic") int tranId) {
 
 		int till = tranId;
-		Entity_CampMa enCampMa = new Entity_CampMa();
 		try {
 
 			for (int i = 0; i < till; i++) {
-				enCampMa.setCpid(Integer.toString(i));
-				enCampMa.setCoid(i);
-				enCampMa.setCpna("ggplay");
-				serviceDb.InsertCampMa(enCampMa);
+				String k = Integer.toString(i);
+				serviceDb.DelCampMaById(k);
 			}
 
 		} catch (Exception e) {

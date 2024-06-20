@@ -323,6 +323,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			data.put("CPSQ", values[1]);
 			data.put("CSKE", values[2]);
 			data.put("CSNA", "");
+			data.put("CBDN", "");
 			data.put("TKDA", values[4]);
 			data.put("TNO1", values[3]);
 			data.put("TNO2", "");
@@ -330,7 +331,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			data.put("TNO4", "");
 			data.put("TNO5", "");
 			data.put("TLNO", "");
-			data.put("TMZO", "Asia/Seoul (+09:00)");
+			data.put("TMZO", "Asia/Seoul"); // <-- (+09:00) 삭제
 			data.put("QUEUEID", values[7]);
 			data.put("TRYCNT", "0");
 

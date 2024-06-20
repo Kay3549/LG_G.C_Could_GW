@@ -149,7 +149,7 @@ public class Controller360view {
 
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			e.printStackTrace();
+			 
 
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360Datacall' got message successfully."));
@@ -184,7 +184,7 @@ public class Controller360view {
 
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360MDatacall' got message successfully."));
@@ -217,7 +217,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
@@ -251,7 +251,7 @@ public class Controller360view {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
@@ -283,7 +283,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
@@ -315,7 +315,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
@@ -346,7 +346,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
@@ -378,7 +378,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360MMstrsSvcCd' got message successfully."));
@@ -409,7 +409,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360WaDataCall' got message successfully."));
@@ -440,7 +440,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360MWaDataCall' got message successfully."));
@@ -472,7 +472,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360WaDataCallOptional' got message successfully."));
@@ -503,7 +503,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360MWaDataCallOptional' got message successfully."));
@@ -536,7 +536,7 @@ public class Controller360view {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
@@ -568,7 +568,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360MWaDataCallTrace' got message successfully."));
@@ -599,7 +599,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 		return Mono.just(ResponseEntity.ok("'Msg360WaMTrCode' got message successfully."));
@@ -630,7 +630,7 @@ public class Controller360view {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			 
 			log.error("Error Message : {}", e.getMessage());
 		}
 
