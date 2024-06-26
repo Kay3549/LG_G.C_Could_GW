@@ -205,8 +205,9 @@ public class ServiceOracle implements InterfaceDBOracle {
 	        cq.select(root);
 
 	        return entityManagerToUse.createQuery(cq)
-	                                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-	                                 .getResultList();
+                    .setLockMode(LockModeType.PESSIMISTIC_WRITE) // 비관적 락 적용
+                    .setMaxResults(400) //가져올 수 있는 데이터 최대 400건으로 제한
+                    .getResultList();
 	    } catch (Exception e) {
 	        log.error("Error retrieving entities of class {}: {}", clazz.getName(), e.getMessage(), e);
 	        return null;

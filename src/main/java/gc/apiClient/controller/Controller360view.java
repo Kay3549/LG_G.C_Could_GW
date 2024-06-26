@@ -50,7 +50,7 @@ public class Controller360view {
 		this.serviceMsgObjOrcl = serviceMsgObjOrcl;
 	}
 	
-	@Scheduled(fixedRate = 10000) //1분 간격으로 아래 함수들을 자동 실행. 
+	@Scheduled(fixedRate = 30000) //30초 간격으로 아래 함수들을 자동 실행. 
 	public void scheduledMethod() {
 
 

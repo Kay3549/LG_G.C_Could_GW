@@ -69,7 +69,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		this.repositoryApimRt = repositoryApimRt;
 	}
 
-
 	@Override
 	public Entity_CampRt createCampRtMsg(String cpid) {
 		// contactid::contactListId::cpid::CPSQ::dirt::tkda::dateCreated
@@ -200,7 +199,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			coid = Integer.parseInt(parts[1]); // 센터구분 코드
 		} catch (Exception e) {
 			log.info("잘못된 coid(센터구분 코드)입니다 coid(센터구분 코드)는 두 자리 숫자여야 합니다 : {}", parts[1]);
-			coid=99;
+			coid = 99;
 			log.info("coid(센터구분 코드)임의로 숫자 '99'로 변경 : {}", coid);
 		}
 		cpna = parts[2]; // 캠페인 명
@@ -220,7 +219,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 
 	@Override
 	public Entity_ContactLt createContactLtMsg(String msg) {// (콜봇에서 뽑아온거)cpid::cpsq::cske::csno::tkda::flag
-
 
 		Entity_ContactLt enContactLt = new Entity_ContactLt();
 		ContactLtId id = new ContactLtId();
@@ -243,7 +241,6 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 
 	@Override
 	public Entity_ContactLt createContactUcrm(Entity_Ucrm entityUcrm) {
-
 
 		Entity_ContactLt enContactLt = new Entity_ContactLt();
 		ContactLtId id = new ContactLtId();
@@ -378,9 +375,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 		if (existingEntity.isPresent()) {
 			throw new DataIntegrityViolationException("주어진 복합키를 가진 레코드가 이미 테이블에 존재합니다.");
 		}
-
 		return repositoryContactLt.save(entityContactLt);
-
 	}
 
 	@Override
@@ -457,7 +452,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	public Page<Entity_Ucrm> getAll() throws Exception {
 		return repositoryUcrm.findAll(PageRequest.of(0, 1000));
 	}
-	
+
 	@Override
 	public Page<Entity_UcrmRt> getAllUcrmRt() throws Exception {
 		return repositoryUcrmRt.findAll(PageRequest.of(0, 1000));
@@ -513,7 +508,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			entity.setCpna(cpna);
 			repositoryCampMa.save(entity);
 		} else {
-			throw new EntityNotFoundException("해당 cpid ("+cpid+")로 조회 된 레코드가 DB에 없습니다.");
+			throw new EntityNotFoundException("해당 cpid (" + cpid + ")로 조회 된 레코드가 DB에 없습니다.");
 		}
 	}
 
