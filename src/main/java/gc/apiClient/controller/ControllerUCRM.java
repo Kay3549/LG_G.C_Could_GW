@@ -100,7 +100,7 @@ public class ControllerUCRM {
 			if (entitylist.isEmpty()) {
 				log.info("DB에서 조회 된 모든 레코드 : 없음");
 			} else {
-				int reps = entitylist.getNumberOfElements();
+				int reps = entitylist.getNumberOfElements(); 
 				log.info("number of records from 'UCRMLT' table : {}", reps);
 				log.info("'UCRMLT'테블에서 조회된 레코드 개수 : {}", reps);
 				log.info("{}만큼 반복", reps);
