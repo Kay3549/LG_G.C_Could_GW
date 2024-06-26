@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import gc.apiClient.entity.oracleH.Entity_DataCall;
 import gc.apiClient.entity.oracleH.Entity_DataCallCustomer;
@@ -41,6 +43,7 @@ import gc.apiClient.repository.oracleM.Repository_MWaDataCallOptional;
 import gc.apiClient.repository.oracleM.Repository_MWaDataCallTrace;
 import gc.apiClient.repository.oracleM.Repository_MWaMTraceCode;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Root;
@@ -49,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 @Profile("oracleH")
+@Transactional("oracleHTransactionManager")
 public class ServiceOracle implements InterfaceDBOracle {
 	// 검색 **Create **Insert **Select
 	private final Repository_DataCall repositoryDataCall;
@@ -191,110 +195,74 @@ public class ServiceOracle implements InterfaceDBOracle {
 		}
 	}
 
-	@Override
 	public <T> List<T> getAll(Class<T> clazz) {
-
-	    EntityManager entityManagerToUse = null;
+	    EntityManager entityManagerToUse = selectEntityManager(clazz);
 
 	    try {
-
-	        if (Entity_DataCall.class.equals(clazz)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MDataCall.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_DataCallCustomer.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MDataCallCustomer.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_DataCallService.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MDataCallService.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_MasterServiceCode.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MMasterServiceCode.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_WaDataCall.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MWaDataCall.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_WaDataCallOptional.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MWaDataCallOptional.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_WaDataCallTrace.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MWaDataCallTrace.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        } else if (clazz.isAssignableFrom(Entity_WaMTracecode.class)) {
-	            entityManagerToUse = entityManagerOracleH;
-	        } else if (clazz.isAssignableFrom(Entity_MWaMTracecode.class)) {
-	            entityManagerToUse = entityManagerOracleM;
-	        }
-
 	        CriteriaBuilder cb = entityManagerToUse.getCriteriaBuilder();
 	        jakarta.persistence.criteria.CriteriaQuery<T> cq = cb.createQuery(clazz);
 	        Root<T> root = cq.from(clazz);
 	        cq.select(root);
-	        
-	        int maxResults = 1000; //해당 테이블에서 최대 1000개의 레코드만 가지고 온다. 
+
 	        return entityManagerToUse.createQuery(cq)
-	                .setMaxResults(maxResults) 
-	                .getResultList();
-
+	                                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+	                                 .getResultList();
 	    } catch (Exception e) {
-	        log.error(e.getMessage());
-	        e.printStackTrace();
+	        log.error("Error retrieving entities of class {}: {}", clazz.getName(), e.getMessage(), e);
+	        return null;
 	    }
+	}
+	
 
-	    return null;
+	public <T> void deleteAll(Class<T> clazz, int orderid) {
+	    EntityManager entityManagerToUse = selectEntityManager(clazz);
+
+	    try {
+	        // Find the entity with pessimistic lock
+	        T entity = entityManagerToUse.find(clazz, orderid, LockModeType.PESSIMISTIC_WRITE);
+
+	        if (entity != null) {
+	            // Remove the entity
+	            entityManagerToUse.remove(entity);
+	            log.info("Entity with ID {} deleted successfully", orderid);
+	        } else {
+	            log.warn("Entity not found with ID {}", orderid);
+	        }
+	    } catch (Exception e) {
+	        log.error("Error deleting entity with ID " + orderid, e);
+	        throw new RuntimeException("Failed to delete entity with ID " + orderid, e);
+	    }
 	}
 
-
-
+	private EntityManager selectEntityManager(Class<?> clazz) {
+	    if (Entity_DataCall.class.equals(clazz) || Entity_DataCallCustomer.class.equals(clazz)
+	            || Entity_DataCallService.class.equals(clazz) || Entity_MasterServiceCode.class.equals(clazz)
+	            || Entity_WaDataCall.class.equals(clazz) || Entity_WaDataCallOptional.class.equals(clazz)
+	            || Entity_WaDataCallTrace.class.equals(clazz) || Entity_WaMTracecode.class.equals(clazz)) {
+	        return entityManagerOracleH;
+	    } else if (Entity_MDataCall.class.equals(clazz) || Entity_MDataCallCustomer.class.equals(clazz)
+	            || Entity_MDataCallService.class.equals(clazz) || Entity_MMasterServiceCode.class.equals(clazz)
+	            || Entity_MWaDataCall.class.equals(clazz) || Entity_MWaDataCallOptional.class.equals(clazz)
+	            || Entity_MWaDataCallTrace.class.equals(clazz) || Entity_MWaMTracecode.class.equals(clazz)) {
+	        return entityManagerOracleM;
+	    } else {
+	        throw new IllegalArgumentException("Unknown entity class: " + clazz.getName());
+	    }
+	}
+	
+	
 	@Override
-	public <T> void deleteAll(Class<T> clazz, int orderid) {
+	public Entity_WaDataCallOptional InsertWaDataCallOptional(Entity_WaDataCallOptional entityWaDataCallOptional,
+			int wcseq) {
+		Optional<Entity_WaDataCallOptional> existingEntity = repositoryWaDataCallOptional.findById(wcseq); // db에 인서트 하기
+																											// 전. 키
 
-		try {
-
-			if (Entity_DataCall.class.equals(clazz)) {
-				repositoryDataCall.deleteById(orderid);
-			} else if (Entity_MDataCall.class.equals(clazz)) {
-				repositoryMDataCall.deleteById(orderid);
-			} else if (Entity_DataCallCustomer.class.equals(clazz)) {
-				repositoryDataCallCustomer.deleteById(orderid);
-			} else if (Entity_MDataCallCustomer.class.equals(clazz)) {
-				repositoryMDataCallCustomer.deleteById(orderid);
-			} else if (Entity_DataCallService.class.equals(clazz)) {
-				repositoryDataCallService.deleteById(orderid);
-			} else if (Entity_MDataCallService.class.equals(clazz)) {
-				repositoryMDataCallService.deleteById(orderid);
-			} else if (Entity_MasterServiceCode.class.equals(clazz)) {
-				repositoryMasterServiceCode.deleteById(orderid);
-			} else if (Entity_MMasterServiceCode.class.equals(clazz)) {
-				repositoryMMasterServiceCode.deleteById(orderid);
-			} else if (Entity_WaDataCall.class.equals(clazz)) {
-				repositoryWaDataCall.deleteById(orderid);
-			} else if (Entity_MWaDataCall.class.equals(clazz)) {
-				repositoryMWaDataCall.deleteById(orderid);
-			} else if (Entity_WaDataCallOptional.class.equals(clazz)) {
-				repositoryWaDataCallOptional.deleteById(orderid);
-			} else if (Entity_MWaDataCallOptional.class.equals(clazz)) {
-				repositoryMWaDataCallOptional.deleteById(orderid);
-			} else if (Entity_WaDataCallTrace.class.equals(clazz)) {
-				repositoryWaDataCallTrace.deleteById(orderid);
-			} else if (Entity_MWaDataCallTrace.class.equals(clazz)) {
-				repositoryMWaDataCallTrace.deleteById(orderid);
-			} else if (Entity_WaMTracecode.class.equals(clazz)) {
-				repositoryWaMTraceCode.deleteById(orderid);
-			} else if (Entity_MWaMTracecode.class.equals(clazz)) {
-				repositoryMWaMTraceCode.deleteById(orderid);
-			}
-
-		} catch (Exception e) {
-			log.error(e.getMessage());
-			e.printStackTrace();
+		if (existingEntity.isPresent()) {// 조회 해본 결과 레코드가 이미 있는 상황이라면 에러는 발생시킨다.
+			throw new DataIntegrityViolationException("주어진 'cpid'를 가진 레코드가 테이블에 이미 존재합니다.");
 		}
+
+		return repositoryWaDataCallOptional.save(entityWaDataCallOptional);// 없으면 인서트
+
 	}
 
 }

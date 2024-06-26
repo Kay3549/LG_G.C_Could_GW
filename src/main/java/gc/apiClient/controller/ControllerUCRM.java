@@ -51,14 +51,14 @@ public class ControllerUCRM {
 		this.customProperties = customProperties;
 	}
 
-	@Scheduled(fixedRate = 60000)//1분 간격으로 함수 'SendUcrmRt' 스케줄 돌림.
+	@Scheduled(fixedRate = 60000)// 1분 간격으로 함수 'SendUcrmRt' 스케줄 돌림.
 	public void scheduledMethod() {
 
 		Mono.fromCallable(() -> SendUcrmRt()).subscribeOn(Schedulers.boundedElastic()).subscribe();
 
 	}
 
-	@Scheduled(fixedRate = 5000)//5초 간격으로 함수 'UcrmMsgFrmCnsmer' 스케줄 돌림. 
+	@Scheduled(fixedRate = 5000)// 5초 간격으로 함수 'UcrmMsgFrmCnsmer' 스케줄 돌림. 
 	public void UcrmContactlt() {
 		Mono.fromCallable(() -> UcrmMsgFrmCnsmer()).subscribeOn(Schedulers.boundedElastic()).subscribe();
 	}
@@ -68,8 +68,7 @@ public class ControllerUCRM {
 
 		try {
 
-			log.info(" ");
-			log.info("====== Class : ControllerUCRM - Method : SaveUcrmData ======");
+			log.info("====== Method : SaveUcrmData ======");
 			Entity_Ucrm enUcrm = serviceDb.createUcrm(msg); //전달 받은 String 형태의 메시지를 쉐도우테이블('UCRMLT')에 인서트 하기 위해서 Entity 형태로 제가공해준다. 
 
 			try {
@@ -87,7 +86,6 @@ public class ControllerUCRM {
 			return Mono.just(ResponseEntity.ok().body(String.format("You've got an error : %s", e.getMessage())));
 		}
 
-		log.info("====== End SaveUcrmData ======");
 		return Mono.just(ResponseEntity.ok("Successfully processed the message."));
 	}
 
@@ -95,8 +93,7 @@ public class ControllerUCRM {
 	public Mono<ResponseEntity<String>> UcrmMsgFrmCnsmer() {//이 함수는 스케줄러에 의해 5초마다 실행되면서 쉐도우 테이블('UCRMLT')에 있는 데이터들을 처리해주는 작업을 수행한다. 
 
 		try {
-			log.info(" ");
-			log.info("====== Class : ControllerUCRM - Method : UcrmMsgFrmCnsmer ======");
+			log.info("====== Method : UcrmMsgFrmCnsmer ======");
 
 			Page<Entity_Ucrm> entitylist = serviceDb.getAll();//바로 위의 함수 'SaveUcrmData'에 의해 테이블에 적재된 데이터들은 최대 1000개씩 불러온다. 
 
@@ -116,6 +113,7 @@ public class ControllerUCRM {
 
 				for (int i = 0; i < reps; i++) {//가져온 레코드 갯수만큼 반복. 
 
+					//UCRM에서 보내준 데이터를 우리쪽 contactlt테이블에 넣기 위해 재가공한 엔티티.
 					Entity_ContactLt enContactLt = serviceDb.createContactUcrm(entitylist.getContent().get(i));
 
 					String cpid = entitylist.getContent().get(i).getId().getCpid(); // 첫번째 레코드부터 cpid를 가지고 온다.
@@ -125,13 +123,15 @@ public class ControllerUCRM {
 
 					if (contactLtId == null || contactLtId.equals("")) {// cpid로 Map(mapcontactltId)을 조회했는데 Map 안에 그것(cpid)에 대응하는 contactltId가 없다면,
 						String result = serviceWeb.GetCampaignsApiRequet("campaigns", cpid);//cpid를 가지고 직접 제네시스 api를 호출해서 contactltId를 알아낸다.
-						if(result.equals("")) {
-							//쉐도우 테이블에서 삭제 테이블명 'UCRMLT'
-							for (int j = 0; j < reps; j++) {
-								serviceDb.DelUcrmLtById(entitylist.getContent().get(j).getTopcDataIsueSno());
-							}
-							return null;
+						
+						if(result.equals("")) {//cpid를 가지고 직접 제네시스 api를 호출해서 contactltId를 알아내려고 했는데 결과 값이 없다면,
+							//쉐도우 테이블에서 삭제. 테이블명 'UCRMLT'
+								serviceDb.DelUcrmLtById(entitylist.getContent().get(i).getTopcDataIsueSno());
+								log.info("캠페인 조회 결과 유효한 캠페인 아이디 ({})가 아닙니다", cpid);
+							//밑의 로직을 수행하지 않고 다음 i번째로 넘어간다. 	
+							continue;
 						}
+						
 						String res = ServiceJson.extractStrVal("ExtractContactLtId", result); // 가져온 결과에서
 																								// contactlistid,queueid만
 																								// 추출. 변수 'res' 형식의 예 ) contactlistid::queueid
@@ -142,6 +142,7 @@ public class ControllerUCRM {
 						mapquetId.put(cpid, res.split("::")[1]);
 					} 
 
+					//UCRM에서 보내 준 데이터를 가지고 제네시스에 PUSH하기 위해서 필요한 데이터들을 추출한다.
 					String row_result = ServiceJson.extractStrVal("ExtractRawUcrm", entitylist.getContent().get(i));
 					row_result = row_result + "::" + contactLtId + "::" + queid; 
 					String contactltMapper = serviceDb.createContactLtGC(row_result); // row_result = cpid::cpsq::cske::csno::tkda::flag::contactltId::queid
@@ -157,38 +158,42 @@ public class ControllerUCRM {
 
 					} catch (DataIntegrityViolationException ex) {//인서트 하려고 했는데 이미 있는 데이터여서 에러가 발생한 경우
 						log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-						if (enContactLt.getFlag().equals("D")) {//만약 인서트 하려고 하는 해당 레코드의 flag 값이 'D'이면 회수하라는 의미 -> 즉 삭제하라는 의미.
-							log.error("flag가 'D', 레코드 삭제");
+						
+						// 해당 레코드의 flag 값이 'D'이면 회수하라는 의미 -> 즉 삭제하라는 의미.
+						if (enContactLt.getFlag().equals("D")) {
+							log.error("flag가 'D', 레코드 삭제 cpid '{}' /cpsq '{}'",cpid, row_result.split("::")[1]);
 
-							//이 부분은 제네시스로 삭제 api를 호출하기 위해서 필요한 부분.
+							//============  Genesys contact list 삭제를 위한 Map 세팅
+							// 삭제가 필요한 contact들만 따로 Map으로 모아둔다.
 							if (!delcontactlists.containsKey(contactLtId)) {
 								delcontactlists.put(contactLtId, new ArrayList<>());
 							}
 							delcontactlists.get(contactLtId).add(row_result.split("::")[1]);
-							//이 부분은 제네시스로 삭제 api를 호출하기 위해서 필요한 부분.
 							
-							
-							serviceDb.DelContactltById(enContactLt.getId());// 'contactlt' 테이블에서 삭제
+							// DB 'CONTACTLT' 테이블에서 row 데이터 삭제
+							serviceDb.DelContactltById(enContactLt.getId());
 						}
+						
 					} catch (DataAccessException ex) {
 						log.error("DataAccessException 발생 : {}", ex.getMessage());
 					}
-
 
 					//쉐도우 테이블에서 삭제 테이블명 'UCRMLT'
 					serviceDb.DelUcrmLtById(entitylist.getContent().get(i).getTopcDataIsueSno());
 
 				}
 
+				// 캠페인 컨택리스트 적재를 위한 Genesys API 호출 (add contact)
 				for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
 
-					log.info("Now the size of Arraylist '{}': {}", entry.getKey(), entry.getValue().size());
+					log.info("(Add)Arraylist '{}'의 현재 사이즈: {}", entry.getKey(), entry.getValue().size());
 					serviceWeb.PostContactLtApiRequet("contact", entry.getKey(), entry.getValue());
 				}
 
+				// 캠페인 컨택리스트 삭제를 위한 Genesys API 호출 (delete contact)
 				for (Map.Entry<String, List<String>> entry : delcontactlists.entrySet()) {
 
-					log.info("Arraylist '{}'의 현재 사이즈: {}", entry.getKey(), entry.getValue().size());
+					log.info("(delete)Arraylist '{}'의 현재 사이즈: {}", entry.getKey(), entry.getValue().size());
 					serviceWeb.DelContacts("delcontacts", entry.getKey(), entry.getValue());
 				}
 
@@ -206,8 +211,7 @@ public class ControllerUCRM {
 	public Mono<ResponseEntity<String>> SendUcrmRt() {
 
 		try {
-			log.info(" ");
-			log.info("====== Class : ControllerUCRM - Method : SendUcrmRt ======");
+			log.info("====== Method : SendUcrmRt ======");
 
 			Page<Entity_UcrmRt> entitylist = serviceDb.getAllUcrmRt();
 
@@ -286,7 +290,6 @@ public class ControllerUCRM {
 			log.error("에러 메시지 : {}", e.getMessage());
 		}
 
-		log.info("====== End SendUcrmRt ======");
 		return Mono.just(ResponseEntity.ok("Successfully processed the message."));
 	}
 
