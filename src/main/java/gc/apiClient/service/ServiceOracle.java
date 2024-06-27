@@ -3,13 +3,14 @@ package gc.apiClient.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import gc.apiClient.entity.oracleH.Entity_DataCall;
@@ -56,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Profile("oracleH")
 public class ServiceOracle implements InterfaceDBOracle {
+	private static final Logger errorLogger = LoggerFactory.getLogger("ErrorLogger");
 	// 검색 **Create **Insert **Select
 	private final Repository_DataCall repositoryDataCall;
 	private final Repository_DataCallCustomer repositoryDataCallCustomer;
@@ -239,12 +241,12 @@ public class ServiceOracle implements InterfaceDBOracle {
 		PlatformTransactionManager transactionManagerToUse = selectTransactionManager(clazz);
 		EntityManager entityManagerToUse = selectEntityManager(clazz);
 
-		//TransactionTemplate 클래스는 Spring 안에 있는 헬퍼 클래스이다. 트랜잭션 매니지먼트를 프로그램적으로 단순화시켜준다. 'PlatformTransactionManager'를 매개변수로 받는다.
+		//TransactionTemplate 클래스는 Spring 안에 있는 헬퍼 클래스이다. 트랜잭션 관리를 프로그램적으로 단순화시켜준다. 'PlatformTransactionManager'를 매개변수로 받는다.
 		TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManagerToUse);
-		return transactionTemplate.execute(status -> {//트랜잭션 context 하에 안의 코드를 실행 후 리턴 값을 받음
+		return transactionTemplate.execute(status -> {//트랜잭션 context 하에 괄호 안의 코드를 실행 후 리턴 값을 받음
 			try {
-				CriteriaBuilder cb = entityManagerToUse.getCriteriaBuilder(); //쿼리를 프로그램적으로 구조화 할기 위해 CriteriaBuilder 인스턴스를 만든다.
-				//주어진 클래스에 대한 'CriteriaQuery' 객체를 생성한다. 여기서 'Root' 쿼리 안의 엔티티를 의미한다.
+				CriteriaBuilder cb = entityManagerToUse.getCriteriaBuilder(); //쿼리를 프로그램적으로 구조화 하기 위해 CriteriaBuilder 인스턴스를 만든다.
+				//주어진 클래스(clazz 즉, 엔티티 클래스)에 대한 'CriteriaQuery' 객체를 생성한다. 여기서 'Root' 쿼리 안의 엔티티를 의미한다.
 				jakarta.persistence.criteria.CriteriaQuery<T> cq = cb.createQuery(clazz);
 				Root<T> root = cq.from(clazz);
 				cq.select(root);
@@ -253,8 +255,8 @@ public class ServiceOracle implements InterfaceDBOracle {
 						.setMaxResults(400) //가져올 수 있는 레코드 최대 400개로 제한
 						.getResultList();
 			} catch (Exception e) {
-				
 				log.error("엔티티를 불러오는 과정에서 에러가 발생했습니다. {} : {}", clazz.getName(), e.getMessage());
+				errorLogger.error("엔티티를 불러오는 과정에서 에러가 발생했습니다. {} : {}", clazz.getName(), e.getMessage(), e);
 				throw new RuntimeException("엔티티를 불러오는 과정에서 에러가 발생했습니다. : " + clazz.getName(), e);
 			}
 		});
@@ -277,6 +279,7 @@ public class ServiceOracle implements InterfaceDBOracle {
 				}
 			} catch (Exception e) {
 				log.error("해당 orderid({})의 레코드를 삭제하는데 에러가 발생했습니다.: {} ", orderid, e.getMessage());
+				errorLogger.error("엔티티를 불러오는 과정에서 에러가 발생했습니다. {} : {}", clazz.getName(), e.getMessage(), e);
 				throw new RuntimeException("해당 orderid({})의 레코드를 삭제하는데 에러가 발생했습니다.: " + orderid, e);
 			}
 		});
