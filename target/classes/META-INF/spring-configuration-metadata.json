@@ -15,13 +15,13 @@
       "name": "spring.datasource.orclm",
       "type": "javax.sql.DataSource",
       "sourceType": "gc.apiClient.configDB.OracleDataSourceMConfig",
-      "sourceMethod": "oracleMDataSource()"
+      "sourceMethod": "public javax.sql.DataSource oracleMDataSource() "
     },
     {
       "name": "spring.datasource.postgresql",
       "type": "javax.sql.DataSource",
       "sourceType": "gc.apiClient.configDB.PostgresqlDataSourceConfig",
-      "sourceMethod": "postgresqlDataSource()"
+      "sourceMethod": "public javax.sql.DataSource postgresqlDataSource() "
     }
   ],
   "properties": [

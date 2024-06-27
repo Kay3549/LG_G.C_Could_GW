@@ -175,8 +175,7 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 			log.info("------ return 하기 전 변수들의 최종 값 확인 ------");
 
 		} catch (Exception e) {
-			e.printStackTrace();
-			log.error("Error Message : {}", e.getMessage());
+			log.error("Error Message : {}", e.getMessage(), e);
 		}
 
 		return enCampRt;
@@ -469,38 +468,77 @@ public class ServicePostgre implements InterfaceDBPostgreSQL {
 	}
 
 	@Override
-	public void DelCampMaById(String cpid) {
-		repositoryCampMa.deleteById(cpid);
+	@Transactional
+	public void DelCampMaById(String cpid) throws Exception {
+		
+		Optional<Entity_CampMa> entityOpt = repositoryCampMa.findByCpid(cpid);
+		if (entityOpt.isPresent()) {
+			repositoryCampMa.deleteById(cpid);
+		} else {
+			throw new Exception("삭제하려는 id를 가진 엔티티가 DB테이블에서 조회되지 않습니다.: " + cpid);
+		}
 	}
 
+	
 	@Override
-	public void DelCallBotRtById(CallBotCampRt id) {
-		repositoryCallbotRt.deleteById(id);
+	@Transactional
+	public void DelCallBotRtById(CallBotCampRt id) throws Exception {
+		
+		Optional<Entity_CallbotRt> entityOpt = repositoryCallbotRt.findById(id);
+		if (entityOpt.isPresent()) {
+			repositoryCallbotRt.deleteById(id);
+		} else {
+			throw new Exception("삭제하려는 id를 가진 엔티티가 DB테이블에서 조회되지 않습니다.: " + id);
+		}
 	}
 
+	
 	@Override
+	@Transactional
 	public void DelUcrmRtById(UcrmCampRt id) throws Exception {
-		repositoryUcrmRt.deleteById(id);
+		
+		Optional<Entity_UcrmRt> entityOpt = repositoryUcrmRt.findById(id);
+		if (entityOpt.isPresent()) {
+			repositoryUcrmRt.deleteById(id);
+		} else {
+			throw new Exception("삭제하려는 id를 가진 엔티티가 DB테이블에서 조회되지 않습니다.: " + id);
+		}
 	}
+	
 
 	@Override
+	@Transactional
 	public void DelApimRtById(ApimCampRt id) throws Exception {
-		repositoryApimRt.deleteById(id);
-	}
 
-	@Override
-	public void DelUcrmLtById(String topcDataIsueSno) {
-		repositoryUcrm.deleteByTopcDataIsueSno(topcDataIsueSno);
-	}
-
-	@Override
-	public void DelContactltById(ContactLtId id) throws Exception {
-		repositoryContactLt.deleteById(id);
+		Optional<Entity_ApimRt> entityOpt = repositoryApimRt.findById(id);
+		if (entityOpt.isPresent()) {
+			repositoryApimRt.deleteById(id);
+		} else {
+			throw new Exception("삭제하려는 id를 가진 엔티티가 DB테이블에서 조회되지 않습니다.: " + id);
+		}
 	}
 
 	@Override
 	@Transactional
-	public void UpdateCampMa(String cpid, String cpna) {
+	public void DelUcrmLtById(String topcDataIsueSno) throws Exception {
+		repositoryUcrm.deleteByTopcDataIsueSno(topcDataIsueSno);
+	}
+
+	@Override
+	@Transactional
+	public void DelContactltById(ContactLtId id) throws Exception {
+
+		Optional<Entity_ContactLt> entityOpt = repositoryContactLt.findById(id);
+		if (entityOpt.isPresent()) {
+			repositoryContactLt.deleteById(id);
+		} else {
+			throw new Exception("삭제하려는 id를 가진 엔티티가 DB테이블에서 조회되지 않습니다.: " + id);
+		}
+	}
+
+	@Override
+	@Transactional
+	public void UpdateCampMa(String cpid, String cpna) throws Exception {
 		Optional<Entity_CampMa> optionalEntity = repositoryCampMa.findById(cpid);// 캠페인 아이디로 레코드 조회.
 
 		if (optionalEntity.isPresent()) {// 조회 후 있다면 해당 레코드의 캠페인명 업데이트
