@@ -37,20 +37,20 @@ public class Controller360view {
         this.serviceMsgObjOrcl = serviceMsgObjOrcl;
     }
     
-    @Scheduled(fixedRate = 30000)
-    public void scheduledMethod() {
-        String[] methods = {
-            "msg360Datacall", "msg360DataCallCustomer", "msg360DataCallService", "msg360MDatacall",
-            "msg360MDataCallCustomer", "msg360MDataCallService", "msg360MMstrsSvcCd", "msg360MstrsSvcCd",
-            "msg360MWaDataCall", "msg360MWaDataCallOptional", "msg360MWaDataCallTrace", "msg360MWaMTrCode",
-            "msg360WaDataCall", "msg360WaDataCallOptional", "msg360WaDataCallTrace", "msg360WaMTrCode"
-        };
-        for (String method : methods) {
-            Mono.fromCallable(() -> invokeMethod(method))
-                .subscribeOn(Schedulers.boundedElastic())
-                .subscribe();
-        }
-    }
+//    @Scheduled(fixedRate = 30000)
+//    public void scheduledMethod() {
+//        String[] methods = {
+//            "msg360Datacall", "msg360DataCallCustomer", "msg360DataCallService", "msg360MDatacall",
+//            "msg360MDataCallCustomer", "msg360MDataCallService", "msg360MMstrsSvcCd", "msg360MstrsSvcCd",
+//            "msg360MWaDataCall", "msg360MWaDataCallOptional", "msg360MWaDataCallTrace", "msg360MWaMTrCode",
+//            "msg360WaDataCall", "msg360WaDataCallOptional", "msg360WaDataCallTrace", "msg360WaMTrCode"
+//        };
+//        for (String method : methods) {
+//            Mono.fromCallable(() -> invokeMethod(method))
+//                .subscribeOn(Schedulers.boundedElastic())
+//                .subscribe();
+//        }
+//    }
     
     /** 
      * 
