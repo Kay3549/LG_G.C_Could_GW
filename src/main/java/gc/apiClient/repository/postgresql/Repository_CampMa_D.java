@@ -9,20 +9,20 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import gc.apiClient.entity.postgresql.Entity_CampMa;
+import gc.apiClient.entity.postgresql.Entity_CampMa_D;
 import jakarta.persistence.LockModeType;
 
 @Repository
-public interface Repository_CampMa extends CrudRepository<Entity_CampMa, String> {
+public interface Repository_CampMa_D extends CrudRepository<Entity_CampMa_D, String> {
 	
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("SELECT c FROM Entity_CampMa c WHERE c.cpid = :cpid")
-	Optional<Entity_CampMa> findByCpid(@Param("cpid") String cpid);
+	@Query("SELECT c FROM Entity_CampMa_D c WHERE c.cpid = :cpid")
+	Optional<Entity_CampMa_D> findByCpid(@Param("cpid") String cpid);
 	
 	@Override
     @Lock(LockModeType.PESSIMISTIC_READ)
-    @Query("SELECT c FROM Entity_CampMa c")
-    List<Entity_CampMa> findAll();
+    @Query("SELECT c FROM Entity_CampMa_D c")
+    List<Entity_CampMa_D> findAll();
 
 	int countBy();
 }

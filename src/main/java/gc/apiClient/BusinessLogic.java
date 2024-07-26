@@ -3,25 +3,29 @@ package gc.apiClient;
 import java.util.HashMap;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
+/**
+ * 
+ * 현재 프로젝는 여러 비지니스 로직이 있다 
+ * 여러 비즈니스 로직 중 UCRM 혹은 Callbot 로직을 division 값에 따라 분류해주는 클래스 이다.
+ * 분류가 되면 토픽이 정해진다.
+ * 토픽은 우편 주소와 같다 메시지를 어디로 보낼지에 대한 정보이다. 
+ *
+ */
 
-@Slf4j
 public class BusinessLogic {
-
+	
+	
+	
 	private static Map<String, String> businesslogic;
 
-	public static Map<String, String> selectedBusiness(String division) {
-
-		log.info("====== Method : selectedBusiness ======");
-		log.info("division : {}", division);
+	public static Map<String, String> selectedBusiness(String divisionid) {
 
 		businesslogic = new HashMap<String, String>();
 		String topic_id = "";
 		String business = "";
 
-		switch (division) {
-		case "홈":
-		case "Home":
+		switch (divisionid.trim()) {
+		case "2c366c7a-349e-481c-bc61-df5153045fe8": //홈
 
 			business = "UCRM";
 			topic_id = "from_clcc_hmucrmcmpnma_message"; 
@@ -30,8 +34,7 @@ public class BusinessLogic {
 
 			break;
 
-		case "모바일":
-		case "Mobile":
+		case "232637ae-d261-46e5-92ea-62e8e4696eb5": //모바일
 
 			business = "UCRM";
 			topic_id = "from_clcc_mblucrmcmpnma_message";
@@ -40,8 +43,7 @@ public class BusinessLogic {
 
 			break;
 
-		case "콜봇홈": 
-		case "CallbotHome": 
+		case "1cd99d76-03bd-4bb6-87f1-1ea5b18cfa24": //콜봇홈
 
 			business = "Callbot";
 			topic_id = "from_clcc_hmaiccmpnma_message";
@@ -50,8 +52,7 @@ public class BusinessLogic {
 
 			break;
 
-		case "콜봇모바일":
-		case "CallbotMobile":
+		case "b26cc9f6-0608-46d9-a059-ab3d6b943771": //콜봇모바일
 
 			business = "Callbot";
 			topic_id = "from_clcc_mblaiccmpnma_message"; 
@@ -68,61 +69,61 @@ public class BusinessLogic {
 			businesslogic.put("topic_id", topic_id);
 		}
 
-		log.info("business : {}", business);
-		log.info("topic_id : {}", topic_id);
 
 		return businesslogic;
 	}
 
-	public static Map<String, String> selectedBusiness(Character tkda ,String divisionName) {
-		
-		log.info("====== Method : selectedBusiness ======");
-		log.info("tkda : {}", tkda);
-		log.info("divisionName : {}", divisionName);
+	public static Map<String, String> rtSelectedBusiness(String divisionid) {
 		
 		businesslogic = new HashMap<String, String>();
 		String topic_id = "";
 		String business = "";
 		
-		if ( (tkda=='C')&&(divisionName.equals("Home")) ) { // UCRM
-			
+		switch (divisionid.trim()) {
+		
+		case "2c366c7a-349e-481c-bc61-df5153045fe8": //홈
+
 			business = "UCRM";
 			topic_id = "from_clcc_hmucrmcmpnrs_message";
 			businesslogic.put("business", business);
 			businesslogic.put("topic_id", topic_id);
 
-		} else if( (tkda=='C')&&(divisionName.equals("Mobile")) ){
+			break;
 			
+		case "232637ae-d261-46e5-92ea-62e8e4696eb5": //모바일
+
 			business = "UCRM";
 			topic_id = "from_clcc_mblucrmcmpnrs_message"; 
 			businesslogic.put("business", business);
 			businesslogic.put("topic_id", topic_id);
+
+			break;
 			
-		} else if( (tkda=='A')&&(divisionName.equals("CallbotHome")) ){ 
-			
-			business = "CALLBOT";
+		case "1cd99d76-03bd-4bb6-87f1-1ea5b18cfa24": //콜봇홈
+
+			business = "Callbot";
 			topic_id = "from_clcc_hmaiccmpnrs_message";
 			businesslogic.put("business", business);
 			businesslogic.put("topic_id", topic_id);
+
+			break;
 			
-		}else if( (tkda=='A')&&(divisionName.equals("CallbotMobile")) ){
-			
-			business = "CALLBOT";
-			topic_id = "from_clcc_mblaiccmpnrs_message"; 
+		case "b26cc9f6-0608-46d9-a059-ab3d6b943771": //콜봇모바일
+
+			business = "Callbot";
+			topic_id = "from_clcc_mblaiccmpnrs_message";  
 			businesslogic.put("business", business);
 			businesslogic.put("topic_id", topic_id);
+
+			break;
 			
-		}else {
-			
+		default:
+
 			business = "APIM";
 			topic_id = ""; 
 			businesslogic.put("business", business);
 			businesslogic.put("topic_id", topic_id);
-			
 		}
-		
-		log.info("business : {}", business);
-		log.info("topic_id : {}", topic_id);
 		
 		return businesslogic;
 	}

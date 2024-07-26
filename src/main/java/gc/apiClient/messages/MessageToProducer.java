@@ -8,6 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
+/**
+ * webClient이용
+ * 카프카 서버로 메시지 보낼 때를 위한 클래스이다. 엄밀히 말하면 Producer App으로 보낸다. 직접적으로 메시지를 보내는 건 'Producer App'
+ * 어디로 메시지를 보낼지(토픽명-towhere), 어떤 내용을 보낼지(메시지-jsonString)를 매개변수로 전달한다. 
+ */
 public class MessageToProducer {
 	
 	private  String domain = AppConfig.getDomain();
@@ -15,8 +20,6 @@ public class MessageToProducer {
 	
 	public void sendMsgToProducer (String towhere, String jsonString) {
 		
-		
-		log.info("도메인 : {}",domain);
 		log.info("====== Method : sendMsgToProducer ======");
 		log.info("Producer로 보낼 EndPoint & 메시지 : '{}' / {}",towhere,jsonString);
 		

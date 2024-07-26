@@ -6,6 +6,9 @@ import gc.apiClient.AppConfig;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ *  사용하는 api들과 endpoint들 정리, 제네시스 OAuth ID,Secret 관련 클래스.
+ */
 @Component
 @Slf4j
 public class WebClientConfig {		// api들의 정보들 수록.
@@ -31,13 +34,13 @@ public class WebClientConfig {		// api들의 정보들 수록.
 		String API_END_POINT = "";
 
 		switch (apiName) {// api들의 method 방식과 endpoint에 대한 정보들. 사용할 신규 api가 있다면 여기에 등록하면 된다.
-		case "campaigns":
+		case "campaignId":
 			API_END_POINT = "/api/v2/outbound/campaigns/{campaignId}";
 			break;
 		case "campaign_stats":
 			API_END_POINT = "/api/v2/outbound/campaigns/{campaignId}/stats";
 			break;
-		case "campaignId":
+		case "campaigns":
 			API_END_POINT = "/api/v2/outbound/campaigns";
 			break;
 		case "contactList":

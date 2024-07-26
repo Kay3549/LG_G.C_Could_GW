@@ -10,16 +10,16 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "CAMPMA")
-public class Entity_CampMa {
+@Table(name = "CAMPMA_D")
+public class Entity_CampMa_D {
+	
+	@Column(name = "COID")
+	private int coid;
 
 	@Id
 	@NotNull
 	@Column(name = "CPID")
 	private String cpid;
-	
-	@Column(name = "COID")
-	private int coid;
 	
 	@Column(name = "CPNA")
  	private String cpna;
@@ -45,7 +45,7 @@ public class Entity_CampMa {
 	@Column(name = "MODDATE")
 	private String moddate;
 
-	public Entity_CampMa() {
+	public Entity_CampMa_D() {
 	}
 
 }

@@ -6,12 +6,9 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-import gc.apiClient.customproperties.CustomProperties;
 import gc.apiClient.entity.oracleH.*;
 import gc.apiClient.entity.oracleM.*;
 import gc.apiClient.interfaceCollection.InterfaceDBOracle;
@@ -24,33 +21,25 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 @Profile("oracleH")
+/**
+ * 
+ * IVR쪽에서 그 쪽 담당자들이 만들어 놓은 쉐도우 테이블에 주기적(정확히는 트리거 발생시)으로 테이터를 쌓는다.
+ * 360view 로직은 그 쉐도우 테이블들에 쌓이 데이터들을 주기적(배치 30초마다)으로 읽어와서 어떠한 조작 없이
+ * 바로 카프카 서버로 전송한다. 엄밀히 말하면 'Producer APP' 보낸다. 카프카 서버로 메시지 보내는 것은 
+ * 전적으로 'Producer APP'이 담당.
+ * 
+ */
 public class Controller360view {
 
     private static final Logger errorLogger = LoggerFactory.getLogger("ErrorLogger");
     private final InterfaceDBOracle serviceOracle;
     private final InterfaceMsgObjOrcl serviceMsgObjOrcl;
 
-    public Controller360view(InterfaceDBPostgreSQL serviceDb, InterfaceDBOracle serviceOracle,
-                             InterfaceWebClient serviceWeb, CustomProperties customProperties, 
-                             InterfaceMsgObjOrcl serviceMsgObjOrcl) {
+    public Controller360view(InterfaceDBPostgreSQL serviceDb, InterfaceDBOracle serviceOracle, InterfaceWebClient serviceWeb,InterfaceMsgObjOrcl serviceMsgObjOrcl) {
         this.serviceOracle = serviceOracle;
         this.serviceMsgObjOrcl = serviceMsgObjOrcl;
     }
     
-//    @Scheduled(fixedRate = 30000)
-//    public void scheduledMethod() {
-//        String[] methods = {
-//            "msg360Datacall", "msg360DataCallCustomer", "msg360DataCallService", "msg360MDatacall",
-//            "msg360MDataCallCustomer", "msg360MDataCallService", "msg360MMstrsSvcCd", "msg360MstrsSvcCd",
-//            "msg360MWaDataCall", "msg360MWaDataCallOptional", "msg360MWaDataCallTrace", "msg360MWaMTrCode",
-//            "msg360WaDataCall", "msg360WaDataCallOptional", "msg360WaDataCallTrace", "msg360WaMTrCode"
-//        };
-//        for (String method : methods) {
-//            Mono.fromCallable(() -> invokeMethod(method))
-//                .subscribeOn(Schedulers.boundedElastic())
-//                .subscribe();
-//        }
-//    }
     
     /** 
      * 
@@ -60,7 +49,7 @@ public class Controller360view {
      * Mono란 반응형 프로그래밍을 지원 하는 라이브러리 Reactor library에서 Publisher를 상속 받은 객체이다. 
      * 반응형 프로그래밍에서 아이템을 Mono객체 1개당 1개의 아이템만 다룰 수 있다. 여기서는 void타입으로서 아무런 아이템도 emit하지 않는다.  
      */
-    private Mono<Void> invokeMethod(String methodName) {
+    public Mono<Void> invokeMethod(String methodName) {
         try {
             //매서드 이름 즉'methodName'로 들어온 값을 가지고 현재 이 함수 'invokeMethod'가 정의 된 곳의 클래스에서 'methodName'의 값과 매칭되는 함수를 반환한다.  
             Method method = getClass().getDeclaredMethod(methodName);
@@ -199,7 +188,7 @@ public class Controller360view {
      * @param biFunction
      * @return 변환된 BiFunction 반환
      */
-    private <T, U, R> BiFunction<T, U, R> wrap(BiFunctionWithException<T, U, R> biFunction) {
+    private <T, U, R> BiFunction<T, U, R> wrap(BiFunctionWithException<T, U, R> biFunction) {   
         return (t, u) -> {
             try {
                 return biFunction.apply(t, u);
