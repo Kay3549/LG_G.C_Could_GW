@@ -3,6 +3,8 @@ package gc.apiClient.service;
 import java.util.List;
 
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,16 +15,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 /**
  * (1번) 제네시스 api를 호출 하면 결과 값을 받는다. 
- * (2번) 제네시스에서 특정 이벤트가 발생하면 Request body 값을 받는다. 
+ * (2번) 제네시스에서 특정 이벤트가 발생하면 Request body를 통해 데이터를 받는다. 
  * 
  * 이 앱에서는 그 값들(1번, 2번)에서 특정 값들을 추출하여 db에 적재를 하거나 카프카로 메시지를 보내는 경우가 있다. 
- * 이 클래스'ServiceJson'는 값들을 추출하여 db에 적재를 하거나 카프카로 메시지를 보내기 위해 재가공(?)리턴해주는 역할을 한다. 
+ * 이 서비스'ServiceJson'는 데이터를 db에 적재를 하거나 카프카로 메시지를 보내기 위해 (1번,2번을 통해)받은 값들 중에 필요한 값들만을 추출하고 그 것을 리턴해주는 역할을 한다. 
  * 
  * 크게 2가지 함수가 있다. 
  * int 타입을 리턴해주는 함수끼리 모아둔 'extractIntVal'함수
  * JSONObject 타입을 리턴해주는 함수끼리 모아둔 'extractObjVal'함수
  *   
  */
+
+
 public class ServiceJson {
 
 	public static int extractIntVal(String methodNm, Object... params) throws Exception {
@@ -32,8 +36,6 @@ public class ServiceJson {
 		switch (methodNm) {
 		case "CampaignListSize":
 			return CampaignListSize((String) params[0]);
-		case "ExtractDict":
-			return ExtractDict((String) params[0]);
 		default:
 			throw new IllegalArgumentException("Invalid strategy type");
 		}
@@ -155,7 +157,7 @@ public class ServiceJson {
 	public static JSONObject ExtractCampMaUpdateOrDel(String stringMsg) throws Exception {
 		// cpid::coid::cpna::divisionid::action
 		
-		log.info("Method : ExtractCampMaUpdateOrDel / 인입 메시지 : {} ", stringMsg);
+		log.info("(ExtractCampMaUpdateOrDel) - 인입 메시지 : {} ", stringMsg);
 		
 		String jsonResponse = stringMsg;
 
@@ -227,47 +229,23 @@ public class ServiceJson {
 		JSONObject jsonObj = new JSONObject();
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode jsonNode = null;
-		String result = "";
 
 		jsonNode = objectMapper.readTree(jsonResponse);
-		result = jsonNode.path(i).path("id").asText();
-		result = result + "::" + jsonNode.path(i).path("contactListId").asText();
-		result = result + "::" + jsonNode.path(i).path("data").path("CPID").asText();
-		result = result + "::" + jsonNode.path(i).path("data").path("CPSQ").asText();
-		result = result + "::" + jsonNode.path(i).path("callRecords").path("TNO1").path("lastResult").asText();
-		result = result + "::" + jsonNode.path(i).path("data").path("TKDA").asText();
-		result = result + "::" + jsonNode.path(i).path("callRecords").path("TNO1").path("lastAttempt").asText();
 		
 		jsonObj.put("id", jsonNode.path(i).path("id").asText());
 		jsonObj.put("contactListId", jsonNode.path(i).path("contactListId").asText());
 		jsonObj.put("cpid", jsonNode.path(i).path("data").path("CPID").asText());
 		jsonObj.put("cpsq", jsonNode.path(i).path("data").path("CPSQ").asText());
+		jsonObj.put("dict", jsonNode.path(i).path("data").path("TRYCNT").asText());
 		jsonObj.put("lastResult", jsonNode.path(i).path("callRecords").path("TNO1").path("lastResult").asText());
 		jsonObj.put("tkda", jsonNode.path(i).path("data").path("TKDA").asText());
 		jsonObj.put("lastAttempt", jsonNode.path(i).path("callRecords").path("TNO1").path("lastAttempt").asText());
 
-		if (result.equals("::::::::::::")) {
-			result = "";
-		}
-
-		log.info("추출 이후 결과 값 rs: {}", result);
+		log.info("(ExtractContacts) - 추출 이후 결과 값 : {}", jsonObj.toString());
 
 		return jsonObj;
 	}
 
-	public static int ExtractDict(String stringMsg) throws Exception {
-
-		String jsonResponse = stringMsg;
-
-		ObjectMapper objectMapper = new ObjectMapper();
-		JsonNode jsonNode = null;
-		int result = 0;
-
-		jsonNode = objectMapper.readTree(jsonResponse);
-		result = jsonNode.path("contactRate").path("attempts").asInt();
-
-		return result;
-	}
 
 	public static JSONObject ExtractContactLtId(String stringMsg) throws Exception {
 
@@ -301,7 +279,6 @@ public class ServiceJson {
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode jsonNode = null;
 		JSONObject jsonobj = new JSONObject();
-		String result = "";
 
 		jsonNode = objectMapper.readTree(jsonResponse);
 		String cpid = jsonNode.path("cpid").asText();
@@ -312,11 +289,7 @@ public class ServiceJson {
 		jsonobj.put("cpsq", cpsq);
 		jsonobj.put("divisionid", divisionid);
 
-		result = cpid + "::" + cpsq + "::" + divisionid;
-		log.info("result : {}", result);
-		log.info("cpid(캠페인아이디) : {}", cpid);
-		log.info("cpsq(캠페인시퀀스) : {}", cpsq);
-		log.info("divisionid(디비전아이디) : {}", divisionid);
+		log.info("(ExtrSaveRtData) - result : {}", jsonobj.toString());
 
 		return jsonobj;
 	}

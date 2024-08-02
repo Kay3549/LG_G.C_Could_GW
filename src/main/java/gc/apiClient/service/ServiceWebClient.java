@@ -12,13 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+/**
+ * 제네시스 api호출 담당 서비스
+ */
 public class ServiceWebClient implements InterfaceWebClient {
 	private static final Logger errorLogger = LoggerFactory.getLogger("ErrorLogger");
 
 	@Override
 	public String getApiReq(String endpoint,int pagenumber) {
-
-		log.info("====== Method : getApiRequet {} ======", endpoint);
 
 		String result = "";
 
@@ -31,30 +32,17 @@ public class ServiceWebClient implements InterfaceWebClient {
 		 *  이 예시의 경우 api를 2번 호출 해야한다. 
 		 *  
 		 */
-		result = webClient.makeApiRequest(endpoint, "GET", "sortBy", "dateCreated", "sortOrder", "descending", "pageSize",100, "pageNumber", pagenumber);
+		try {
+			result = webClient.makeApiRequest(endpoint, "GET", "sortBy", "dateCreated", "sortOrder", "descending", "pageSize",100, "pageNumber", pagenumber);
+			return result;
+		} catch (Exception e) {
+			log.error("(getApiReq) - 에러 발생 : {}",e.getMessage());
+			errorLogger.error(e.getMessage(), e);
+			return result;
+		}
 
-		return result;
 	}
-	
 
-	/*
-	 *   캠페인 아이디를 가지고 하나의 캠페인에 대한 통계 데이터를 가지온다. 
-	 *   주로 발신후 그 결과, 응답값에 대한 처리를 해줄때 사용하는 함수이다. 
-	 *   통화시도 횟수, 통화 연결 횟수, 커넷션 비율 등등... 
-	 *   근데 주로 통화 시도 횟수, attempts = > dict 를 알기 위해서 사용한다.
-	 */
-	@Override
-	public String getStatusApiReq(String endpoint, String campaignId) {
-
-		log.info("====== Method : getStatusApiRequet {} ======", endpoint);
-
-		String result = "";
-
-		WebClientApp webClient = new WebClientApp();
-		result = webClient.makeApiRequest(endpoint, "GET", campaignId);
-
-		return result;
-	}
 	
 
 	/**
@@ -66,19 +54,17 @@ public class ServiceWebClient implements InterfaceWebClient {
 		/*
 		 * <Genesys API 호출> - 캠페인 조회 [GET]/api/v2/outbound/campaigns/{campaignId}
 		 */
-		log.info("====== Method : getCampaignsApiRequet {} ======", endpoint);
 		String result = "";
         
         try {
             WebClientApp webClient = new WebClientApp();
             result = webClient.makeApiRequest(endpoint, "GET", campaignId);
+        	return result;
         } catch (Exception e) {
-            log.info("getCampaignsApiRequet 에러 : {}",  e.getMessage());
+            log.info("(getCampaignsApiReq) - 에러 발생 : {}",  e.getMessage());
             errorLogger.error(e.getMessage(), e);
+        	return result;
         }
-        
-
-		return result;
 	}
 
 	
@@ -93,15 +79,19 @@ public class ServiceWebClient implements InterfaceWebClient {
 		/*
 		 * Genesys API 호출 - 컨택리스트 적재 [POST] api/v2/outbound/contactlists/{contactListId}/contacts
 		 */
-		log.info("====== Method : gostContactLtApiRequet {} ======", endpoint);
 
 		String result = "";
-		WebClientApp webClient = new WebClientApp();
-		result = webClient.apiReqPushContacts(endpoint, contactListId, msg.toString());
-
+		try {
+			WebClientApp webClient = new WebClientApp();
+			result = webClient.apiReqPushContacts(endpoint, contactListId, msg.toString());
+			return result;
+		} catch (Exception e) {
+			log.info("(postContactLtApiReq) - 에러 발생 : {}",  e.getMessage());
+			errorLogger.error(e.getMessage(), e);
+			return result;
+		}
 
 //		log.info("postContactLtApiRequet 요청 후 결과 값 : {} || 컨텍리스트 아이디 : {}", rs,contactListId);
-		return result;
 	}
 	
 
@@ -114,16 +104,20 @@ public class ServiceWebClient implements InterfaceWebClient {
 		/*
 		 * Genesys API 호출 - 컨택리스트 조회 [POST] api/v2/outbound/contactlists/{contactListId}/contacts/bulk
 		 */
-		log.info("====== Method : postContactLtApiBulk {} ======", endpoint);
 		String result = "";
-		log.info("contactListId : {}, cskes : {}", contactListId, cskes.toString());
+		log.info("(postContactLtApiBulk) - contactListId : {}, cskes : {}", contactListId, cskes.toString());
 
-		WebClientApp webClient = new WebClientApp();
-		result = webClient.apiReqGetRtOfContacts(endpoint, contactListId, cskes);
-
+		try {
+			WebClientApp webClient = new WebClientApp();
+			result = webClient.apiReqGetRtOfContacts(endpoint, contactListId, cskes);
+			return result;
+		} catch (Exception e) {
+			log.info("(postContactLtApiBulk) - 에러 발생 : {}",  e.getMessage());
+			errorLogger.error(e.getMessage(), e);
+			return result;
+		}
 		
 //		log.info("postContactLtApiBulk 요청 후 결과 값 result : {}", rs);
-		return result;
 	}
 	
 	/**
@@ -132,8 +126,7 @@ public class ServiceWebClient implements InterfaceWebClient {
 	 */
 	@Override
 	public Void postContactLtClearReq(String endpoint, String contactListId) {
-		log.info("====== Method : postContactLtClearReq {} ======", endpoint);
-		log.info("contactListId : {}", contactListId);
+		log.info("(postContactLtClearReq) - contactListId : {}", contactListId);
 		
 		WebClientApp webClient = new WebClientApp();
 		webClient.makeApiRequest(endpoint, "POST", contactListId);
@@ -150,22 +143,23 @@ public class ServiceWebClient implements InterfaceWebClient {
 		/*
 		 * Genesys API 호출 - 컨택리스트 삭제 [DELETE] api/v2/outbound/contactlists/{contactListId}/contacts
 		 */
-		log.info("====== Method : delContacts {} ======", endpoint);
-		log.info("Incoming message (삭제 대상자 리스트-CPSQ) : {}", msg.toString());
+		log.info("(delContacts) - Incoming message (삭제 대상자 리스트-CPSQ) : {}", msg.toString());
 
 		String result = "";
 		WebClientApp webClient = new WebClientApp();
 
 		String rst = msg.toString();
 		rst = rst.substring(1, rst.length() - 1);
-		result = webClient.apionlyfordelContacts(endpoint, "DELETE", contactListId, rst);
+		try {
+			result = webClient.apionlyfordelContacts(endpoint, "DELETE", contactListId, rst);
+			if (result == null) {log.info("(delContacts) - {} 정상적으로 삭제 되었습니다.", rst);}
+			return result;
+		} catch (Exception e) {
+			log.info("(delContacts) - 에러 발생 : {}",  e.getMessage());
+			errorLogger.error(e.getMessage(), e);
+			return result;
+		}
 
-		if (result == null)
-			log.info("{} 정상적으로 삭제 되었습니다.", rst);
-		else
-			log.error("에러가 발생했습니다. : {}", result);
-
-		return result;
 	}
 
 }

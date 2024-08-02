@@ -9,8 +9,6 @@ import org.springframework.data.domain.Page;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,26 +57,30 @@ public class ControllerCallBot {
 	private final ServiceInstCmpRt serviceInstCmpRt;
 	private final InterfaceWebClient serviceWeb;
 	private final CreateEntity createEntity;
+	private final MsgCallbot msgCallbot;
 
-	public ControllerCallBot(InterfaceDBPostgreSQL serviceDb, InterfaceWebClient serviceWeb, CreateEntity createEntity, ServiceInstCmpRt serviceInstCmpRt) {
+	public ControllerCallBot(InterfaceDBPostgreSQL serviceDb
+			, InterfaceWebClient serviceWeb
+			, CreateEntity createEntity
+			, ServiceInstCmpRt serviceInstCmpRt
+			, MsgCallbot msgCallbot) {
 		this.serviceDb = serviceDb;
 		this.createEntity = createEntity;
 		this.serviceWeb = serviceWeb;
 		this.serviceInstCmpRt = serviceInstCmpRt;
+		this.msgCallbot = msgCallbot;
 	}
 
 	/**
 	 * 
-	 * 캠페인 대상자 전송 To Genesys (from kafka-consumer)
+	 * 카프카로부터 아웃바운드 발신 대상자 리스트를 받아 DB에 적재(contactlt테이블)하고 제네시스 api를 호출을 통해 제네시스쪽으로 발신대상자 리스트를 넣어주는 메소드
 	 * 
-	 * @param tranId
-	 * @param msg
+	 * @param 카프카 컨슈머 앱에서 호출하는 GcAPIGateway 앱쪽의 API endpoint
+	 * @param msg 카프카로 부터 받은 메시지
 	 * @return
 	 */
 	@PostMapping("/contactlt/{topic}")
 	public Mono<ResponseEntity<String>> callbotMsgFrmCnsumer(@PathVariable("topic") String tranId, @RequestBody String msg) {
-
-		log.info("====== Method : callbotMsgFrmCnsumer ======");
 
 		String jsonResponse = msg;
 
@@ -88,15 +90,15 @@ public class ControllerCallBot {
 
 		try {
 			jsonNode = objectMapper.readTree(jsonResponse);
-			casenum = jsonNode.path("cmpnItemDto").size();
+			casenum = jsonNode.path("cmpnItemDto").size();//카프카로부터 전해 받은 메시지 리스트에 발신대상자가 몇 명인지 파악.
 
 		} catch (Exception e) {
-			log.error(e.getMessage(), e);
+			log.error("(callbotMsgFrmCnsumer) - {}", e.getMessage());
 			errorLogger.error(e.getMessage(), e);
 		}
 
 		int cntofmsg = casenum;
-		log.info("컨슈머로 부터 받은 발신 대상자 건수 : {}", cntofmsg);
+		log.info("(callbotMsgFrmCnsumer) - 컨슈머로 부터 받은 발신 대상자 건수 : {}", cntofmsg);
 
 		JSONObject contactltObj = null;
 		String cpid = "";
@@ -105,24 +107,26 @@ public class ControllerCallBot {
 		Entity_CampMa enCpma = null;
 		List<String> arr = new ArrayList<String>();
 
-		log.info("topic_id : {}", topic_id);
-
 		switch (topic_id) {
 
-		case "callbothome":// IF-CRM_003
-		case "callbotmobile":// IF-CRM_004
+		case "callbothome":
+		case "callbotmobile":
 
 			try {
 
-				contactltObj = ServiceJson.extractObjVal("ExtractValCallBot", msg, 0);// 뽑아온다.cpid::cpsq::cske::csno::tkda::flag
+				//카프카로부터 받은 메시지(발신 대상자리스트)로부터 앞으로 진행될 프로세스에서 필요한 데이터들만을 추출한다.(cpid::cpsq::cske::csno::tkda::flag)
+				contactltObj = ServiceJson.extractObjVal("ExtractValCallBot", msg, 0);
 
 				Entity_ContactLt enContactLt = createEntity.createContactLtMsg(contactltObj);// ContactLt 테이블에 들어갈 값들을
+				if(enContactLt == null) {
+					return Mono.empty();
+				}
 				// Entity_ContactLt 객체에 매핑시킨다.
 				cpid = enContactLt.getId().getCpid();// 캠페인 아이디를 가져온다.
 				enCpma = serviceDb.findCampMaByCpid(cpid);
 				contactLtId = enCpma.getContactltid();
 
-				log.info("컨텍리스트 아이디 : {}", contactLtId);
+				log.info("(callbotMsgFrmCnsumer) - 컨텍리스트 아이디 : {}", contactLtId);
 
 				for (int i = 0; i < cntofmsg; i++) {
 
@@ -130,20 +134,22 @@ public class ControllerCallBot {
 					contactltObj.put("contactltid", contactLtId);
 					
 					enContactLt = createEntity.createContactLtMsg(contactltObj);// ContactLt 테이블에 들어갈 값들을
+					if(enContactLt == null) {
+						continue;
+					}
 					String contactltMapper = createEntity.createContactLtGC(contactltObj);
 
-					arr.add(contactltMapper);
+					if( !contactltMapper.equals("") ) {
+						arr.add(contactltMapper);
+					}
 
 					// db인서트
 					try {
 						serviceDb.insertContactLt(enContactLt);
-
-					} catch (DataIntegrityViolationException ex) {
-//						log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-
-					} catch (DataAccessException ex) {
-						log.error("DataAccessException 발생 : {}", ex.getMessage());
-					}
+					} catch (Exception e) {
+						log.error("(callbotMsgFrmCnsumer) - 에러 발생 : {}", e.getMessage());
+						errorLogger.error(e.getMessage(), e);
+					} 
 				}
 
 				serviceWeb.postContactLtApiReq("contact", contactLtId, arr);// api : "/api/v2/outbound/contactlists/{contactListId}/contacts";
@@ -151,7 +157,8 @@ public class ControllerCallBot {
 				return Mono.just(ResponseEntity.ok("Successfully processed the message."));
 
 			} catch (Exception e) {
-				log.error("에러 메시지 : {}", e.getMessage());
+				log.error("(callbotMsgFrmCnsumer) - 에러 메시지 : {}", e.getMessage());
+				errorLogger.error(e.getMessage(), e);
 				return Mono.just(ResponseEntity.ok().body(String.format("에러가 발생했습니다 : %s", e.getMessage())));
 			}
 
@@ -167,19 +174,16 @@ public class ControllerCallBot {
 	 * @return
 	 */
 	@GetMapping("/sendcallbotrt")
-	public Mono<ResponseEntity<String>> sendCallBotRt() {
+	public Mono<ResponseEntity<String>> sendCallBotRt() {//2024-08-01 @Transactional 어노테이션 삭제
 
 		try {
-			log.info("====== Method : sendCallBotRt ======");
 
 			Page<Entity_CallbotRt> entitylist = serviceDb.getAllCallBotRt();
 
 			if (entitylist.isEmpty()) {
-				log.info("DB에서 조회 된 모든 레코드 : 없음");
 			} else {
-				log.info("DB에서 조회 된 모든 레코드 : {}", entitylist.toString());
 				int reps = entitylist.getNumberOfElements();
-				log.info("'CAMPRT_CALLBOT_W' table에서 조회 된 레코드 개수 : {}", reps);
+				log.info("(sendCallBotRt) - CAMPRT_CALLBOT_W table에서 조회 된 레코드 개수 : {}", reps);
 
 				Map<String, String> mapdivision = new HashMap<String, String>();
 				Map<String, String> mapcontactltId = new HashMap<String, String>();// 키 : cpid, 값 : contactLtId
@@ -214,7 +218,7 @@ public class ControllerCallBot {
 												// 존재하는지 조회.
 
 							try {
-								log.info("캠페인 아이디 ({})로 api호출 결과 결과가 없습니다. 마스터D 테이블을 조회합니다.", cpid);
+								log.info("(sendCallBotRt) - 캠페인 아이디 ({})로 api호출 결과 결과가 없습니다. 마스터D 테이블을 조회합니다.", cpid);
 								enCpma_D = serviceDb.findCampMa_DByCpid(cpid);
 
 								contactLtId = enCpma_D.getContactltid();
@@ -222,7 +226,7 @@ public class ControllerCallBot {
 								mapdivision.put(contactLtId, divisionid);
 
 							} catch (Exception e) {// campma_d테이블을 조회했는데도 없다면 유효하지 않은 캠페인으로 처리하고 해당레코드 삭제
-								log.info("마스터D 테이블 조회 결과 유효한 캠페인 아이디 ({})가 아닙니다", cpid);
+								log.info("(sendCallBotRt) - 마스터D 테이블 조회 결과 유효한 캠페인 아이디 ({})가 아닙니다", cpid);
 								invalid_camp.add(cpid); // 유효하지 않은 캠페인 저장.
 								serviceDb.delCallBotRtById(enCallbotRt.getId());
 								// 밑의 로직을 수행하지 않고 다음 i번째로 넘어간다.
@@ -248,7 +252,7 @@ public class ControllerCallBot {
 					// 복합키(camp_id, camp_seq)로 delete row
 					serviceDb.delCallBotRtById(enCallbotRt.getId());
 
-					log.info("아이디가 '{}'인 contactListId에 값 추가", contactLtId);
+					log.info("(sendCallBotRt) - 아이디가 {}인 contactListId에 값 추가", contactLtId);
 
 					for (Map.Entry<String, List<String>> entry : contactlists.entrySet()) {
 						divisionid = mapdivision.get(entry.getKey());
@@ -269,8 +273,8 @@ public class ControllerCallBot {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
-			log.error("에러 메시지 : {}", e.getMessage());
+			errorLogger.error(e.getMessage(), e);
+			log.error("(sendCallBotRt) - 에러 메시지 : {}", e.getMessage());
 		}
 
 		return Mono.just(ResponseEntity.ok("Successfully processed the message."));
@@ -288,11 +292,10 @@ public class ControllerCallBot {
 	 */
 	public Mono<Void> sendCampRtToCallbot(String contactLtId, List<String> values, String divisionid) throws Exception {
 
-		log.info("====== Method : sendCampRtToCallbot ======");
 		// 컨택리스트(contactListId)별 컨택데이터(contact-cpsq)를 Genesys Cloud로 전송 (Bulk)
 		String result = serviceWeb.postContactLtApiBulk("contactList", contactLtId, values); // api : "/api/v2/outbound/contactlists/{contactListId}/contacts/bulk";
 
-		if (result.equals("[]")) {
+		if (result.equals("")) {
 			values.clear();
 			return Mono.empty();
 		}
@@ -315,14 +318,16 @@ public class ControllerCallBot {
 
 			contactsresult = ServiceJson.extractObjVal("ExtractContacts", result, i);
 			if (contactsresult == null) {
-				log.info("결과 없음, 다음으로 건너 뜀.");
+				log.info("(sendCampRtToCallbot) - 결과 없음, 다음으로 건너 뜀.");
 				continue;
 			}
 
 			entityCmRt = createEntity.createCampRtMsg(contactsresult, enCampMa);// db 인서트 하기 위한 entity.
-
-			MsgCallbot msgcallbot = new MsgCallbot(serviceDb);
-			String msg = msgcallbot.makeRtMsg(entityCmRt);
+			if(entityCmRt == null) {
+				continue;
+			}
+			
+			String msg = msgCallbot.makeRtMsg(entityCmRt);//2024-07-31 DB접근하는 로직 제거
 
 			MessageToProducer producer = new MessageToProducer();
 			String endpoint = "/gcapi/post/" + topic_id;
@@ -332,11 +337,10 @@ public class ControllerCallBot {
 			try {
 				serviceInstCmpRt.insrtCmpRt(contactsresult, enCampMa);
 //				serviceDb.insertCampRt(entityCmRt);
-			} catch (DataIntegrityViolationException ex) {
-				log.error("DataIntegrityViolationException 발생 : {}", ex.getMessage());
-			} catch (DataAccessException ex) {
-				log.error("DataAccessException 발생 : {}", ex.getMessage());
-			}
+			} catch (Exception e) {
+				errorLogger.error(e.getMessage(), e);
+				log.error("(sendCampRtToCallbot) - 에러 발생 : {}", e.getMessage());
+			} 
 		}
 		values.clear();
 		return Mono.empty();
